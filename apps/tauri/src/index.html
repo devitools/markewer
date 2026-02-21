@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="highlight-light.min.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="highlight-dark.min.css" media="(prefers-color-scheme: dark)">
+  <script src="highlight.min.js"></script>
+</head>
+<body>
+  <div id="toolbar" data-tauri-drag-region>
+    <button id="btn-theme" title="Toggle theme (system / light / dark)">
+      <svg id="icon-theme" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
+      </svg>
+    </button>
+    <span id="toolbar-title"></span>
+    <button id="btn-refresh" title="Refresh">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="split">
+    <div id="sidebar">
+      <div id="sidebar-header">OUTLINE</div>
+      <ul id="outline-list"></ul>
+    </div>
+    <div id="content-area">
+      <div id="content" class="markdown-body"></div>
+      <div id="empty-state">
+        <p>No file open</p>
+        <button id="btn-open">Open File</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

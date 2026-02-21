@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicegui-org/nicegui/main/nicegui/static/tauri.conf.schema.json",
+  "productName": "Markewer",
+  "version": "0.1.0",
+  "identifier": "com.devitools.markewer",
+  "build": {
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Markewer",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 500,
+        "minHeight": 400
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["appimage", "deb", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0"]
+      }
+    }
+  },
+  "plugins": {
+    "cli": {
+      "args": [
+        {
+          "name": "file",
+          "index": 1,
+          "takesValue": true
+        }
+      ]
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/Devitools/markewer/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for Markewer",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "cli:default",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "updater:default"
+  ]
+}
