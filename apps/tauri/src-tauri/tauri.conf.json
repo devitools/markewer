@@ -38,12 +38,7 @@
     },
     "fileAssociations": [
       {
-        "ext": "md",
-        "description": "Markdown Document",
-        "contentTypes": ["text/markdown"]
-      },
-      {
-        "ext": "markdown",
+        "ext": ["md", "markdown"],
         "description": "Markdown Document",
         "contentTypes": ["text/markdown"]
       }
