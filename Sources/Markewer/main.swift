@@ -13,8 +13,14 @@ struct Heading {
 func extractHeadings(from markdown: String) -> [Heading] {
     var headings: [Heading] = []
     var index = 0
+    var inCodeBlock = false
     for line in markdown.components(separatedBy: "\n") {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("```") {
+            inCodeBlock = !inCodeBlock
+            continue
+        }
+        if inCodeBlock { continue }
         var level = 0
         for ch in trimmed { if ch == "#" { level += 1 } else { break } }
         if level >= 1 && level <= 4 && trimmed.count > level {
