@@ -79,13 +79,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-macos:
-    needs: create-release
-    uses: ./.github/workflows/release-swift.yml
-    with:
-      version: ${{ needs.create-release.outputs.version }}
-      tag_name: ${{ needs.create-release.outputs.tag_name }}
-
   build-tauri:
     needs: create-release
     uses: ./.github/workflows/release-tauri.yml

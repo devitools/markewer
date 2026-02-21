@@ -20,7 +20,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage", "deb", "nsis"],
+    "targets": ["appimage", "deb", "nsis", "dmg"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -32,8 +32,19 @@
       "deb": {
         "depends": ["libwebkit2gtk-4.1-0"]
       }
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.0"
     }
   },
+  "fileAssociations": [
+    {
+      "ext": ["md", "markdown"],
+      "name": "Markdown Document",
+      "mimeType": "text/markdown",
+      "role": "Viewer"
+    }
+  ],
   "plugins": {
     "cli": {
       "args": [

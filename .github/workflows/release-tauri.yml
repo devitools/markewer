@@ -1,4 +1,4 @@
-name: Release Tauri (Linux + Windows)
+name: Release Tauri
 
 on:
   workflow_call:
@@ -27,6 +27,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+          - platform: macos-latest
+            target: x86_64-apple-darwin
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
           - platform: windows-latest
@@ -39,11 +43,21 @@ jobs:
 
       - name: Patch version in Cargo.toml
         shell: bash
-        run: sed -i "s/^version = \".*\"/version = \"${{ inputs.version }}\"/" apps/tauri/src-tauri/Cargo.toml
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^version = \".*\"/version = \"${{ inputs.version }}\"/" apps/tauri/src-tauri/Cargo.toml
+          else
+            sed -i "s/^version = \".*\"/version = \"${{ inputs.version }}\"/" apps/tauri/src-tauri/Cargo.toml
+          fi
 
       - name: Patch version in tauri.conf.json
         shell: bash
-        run: sed -i 's/"version": ".*"/"version": "${{ inputs.version }}"/' apps/tauri/src-tauri/tauri.conf.json
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' 's/"version": ".*"/"version": "${{ inputs.version }}"/' apps/tauri/src-tauri/tauri.conf.json
+          else
+            sed -i 's/"version": ".*"/"version": "${{ inputs.version }}"/' apps/tauri/src-tauri/tauri.conf.json
+          fi
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -85,3 +99,4 @@ jobs:
           projectPath: apps/tauri
           tagName: ${{ inputs.tag_name }}
           releaseId: ${{ inputs.release_id }}
+          args: --target ${{ matrix.target }}

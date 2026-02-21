@@ -35,12 +35,20 @@ elif [ -n "$SCRIPT_DIR" ]; then
 else
     info "Downloading Arandu..."
 
+    ARCH="$(uname -m)"
+    case "$ARCH" in
+        arm64) ARCH="aarch64" ;;
+    esac
+
     VERSION="${VERSION:-latest}"
     if [ "$VERSION" = "latest" ]; then
-        DMG_URL="https://github.com/$REPO/releases/latest/download/Arandu.dmg"
-    else
-        DMG_URL="https://github.com/$REPO/releases/download/v${VERSION}/Arandu.dmg"
+        VERSION="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')"
+        if [ -z "$VERSION" ]; then
+            err "Failed to resolve latest version from GitHub API"
+            exit 1
+        fi
     fi
+    DMG_URL="https://github.com/$REPO/releases/download/v${VERSION}/Arandu_${VERSION}_${ARCH}.dmg"
 
     TMPDIR_DL="$(mktemp -d)"
     DMG_PATH="$TMPDIR_DL/Arandu.dmg"
