@@ -371,6 +371,122 @@ class MarkdownWindowController: NSObject,
     }
 }
 
+// MARK: - CLI Installer
+
+struct CLIInstaller {
+    private static let dismissedKey = "arandu.cliOffered"
+    private static let cliPaths = ["/usr/local/bin/arandu", "\(NSHomeDirectory())/.local/bin/arandu"]
+
+    private static let cliScript = """
+    #!/bin/bash
+    APP=""
+    for p in "/Applications/Arandu.app" "$HOME/Applications/Arandu.app"; do
+        [ -d "$p" ] && APP="$p" && break
+    done
+    [ -z "$APP" ] && echo "Arandu.app not found." >&2 && exit 1
+    if [ "$#" -eq 0 ]; then open "$APP"; else
+        PATHS=(); for f in "$@"; do
+            PATHS+=("$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")")
+        done; open -n "$APP" --args "${PATHS[@]}"
+    fi
+    """
+
+    static func isCLIInstalled() -> Bool {
+        cliPaths.contains { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    static func hasBeenDismissed() -> Bool {
+        UserDefaults.standard.bool(forKey: dismissedKey)
+    }
+
+    enum InstallResult {
+        case installed(String)
+        case cancelled
+        case failed(String)
+    }
+
+    static func installCLI() -> InstallResult {
+        let tmpPath = NSTemporaryDirectory() + "arandu-cli-install"
+        do {
+            try cliScript.write(toFile: tmpPath, atomically: true, encoding: .utf8)
+        } catch {
+            return .failed("Could not write temporary file: \(error.localizedDescription)")
+        }
+
+        let globalPath = "/usr/local/bin/arandu"
+        let fm = FileManager.default
+        if fm.isWritableFile(atPath: "/usr/local/bin") {
+            do {
+                if fm.fileExists(atPath: globalPath) { try fm.removeItem(atPath: globalPath) }
+                try fm.copyItem(atPath: tmpPath, toPath: globalPath)
+                chmod(globalPath, 0o755)
+                try? fm.removeItem(atPath: tmpPath)
+                return .installed(globalPath)
+            } catch {}
+        }
+
+        var error: NSDictionary?
+        let script = "do shell script \"cp '\(tmpPath)' '\(globalPath)' && chmod +x '\(globalPath)'\" with administrator privileges"
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(&error)
+            if error == nil {
+                try? fm.removeItem(atPath: tmpPath)
+                return .installed(globalPath)
+            }
+        }
+
+        let localDir = NSHomeDirectory() + "/.local/bin"
+        let localPath = localDir + "/arandu"
+        do {
+            try fm.createDirectory(atPath: localDir, withIntermediateDirectories: true)
+            if fm.fileExists(atPath: localPath) { try fm.removeItem(atPath: localPath) }
+            try fm.copyItem(atPath: tmpPath, toPath: localPath)
+            chmod(localPath, 0o755)
+            try? fm.removeItem(atPath: tmpPath)
+            return .installed(localPath)
+        } catch {
+            try? fm.removeItem(atPath: tmpPath)
+            return .failed("Could not install CLI: \(error.localizedDescription)")
+        }
+    }
+
+    static func offerInstall() {
+        let alert = NSAlert()
+        alert.messageText = "Install Command Line Tool?"
+        alert.informativeText = "The \"arandu\" command lets you open Markdown files from Terminal.\n\nUsage: arandu README.md"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install")
+        alert.addButton(withTitle: "Not Now")
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Do not show this message again"
+
+        let response = alert.runModal()
+
+        if alert.suppressionButton?.state == .on {
+            UserDefaults.standard.set(true, forKey: dismissedKey)
+        }
+
+        guard response == .alertFirstButtonReturn else { return }
+
+        let result = installCLI()
+        let resultAlert = NSAlert()
+        switch result {
+        case .installed(let path):
+            resultAlert.messageText = "CLI Installed"
+            resultAlert.informativeText = "The \"arandu\" command was installed at:\n\(path)\n\nYou can now use: arandu README.md"
+            resultAlert.alertStyle = .informational
+            UserDefaults.standard.set(true, forKey: dismissedKey)
+        case .cancelled:
+            return
+        case .failed(let reason):
+            resultAlert.messageText = "Installation Failed"
+            resultAlert.informativeText = reason
+            resultAlert.alertStyle = .warning
+        }
+        resultAlert.runModal()
+    }
+}
+
 // MARK: - App Delegate
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -387,6 +503,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             paths.forEach { openFile(URL(fileURLWithPath: $0)) }
         }
         NSApp.activate(ignoringOtherApps: true)
+
+        if !CLIInstaller.isCLIInstalled() && !CLIInstaller.hasBeenDismissed() {
+            CLIInstaller.offerInstall()
+        }
     }
 
     func buildMenu() {
@@ -395,6 +515,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // App menu
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About Arandu", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        let cliItem = NSMenuItem(title: "Install Command Line Tool\u{2026}", action: #selector(installCLIFromMenu), keyEquivalent: "")
+        cliItem.target = self
+        appMenu.addItem(cliItem)
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Arandu", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         let appMenuItem = NSMenuItem()
@@ -424,6 +548,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func openDocument() {
         showOpenPanel()
+    }
+
+    @objc func installCLIFromMenu() {
+        CLIInstaller.offerInstall()
     }
 
     func showOpenPanel() {

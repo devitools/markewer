@@ -1,6 +1,15 @@
 #!/bin/bash
 # Arandu CLI — opens Markdown files with the Arandu app
-# Usage: arandu [file.md ...]
+# Usage: arandu [--wait] [file.md ...]
+
+WAIT=""
+FILES=()
+for arg in "$@"; do
+    case "$arg" in
+        --wait|-W) WAIT="-W" ;;
+        *) FILES+=("$arg") ;;
+    esac
+done
 
 # Prefer /Applications, fall back to ~/Applications
 if [ -d "/Applications/Arandu.app" ]; then
@@ -12,14 +21,15 @@ else
     exit 1
 fi
 
-if [ "$#" -eq 0 ]; then
-    open "$APP"
+if [ "${#FILES[@]}" -eq 0 ]; then
+    open $WAIT "$APP"
 else
     # Pass all files as --args to bypass the UTI document system
     PATHS=()
-    for f in "$@"; do
+    for f in "${FILES[@]}"; do
         abs=$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")
         PATHS+=("$abs")
     done
-    open -n "$APP" --args "${PATHS[@]}"
+    open -n $WAIT "$APP" --args "${PATHS[@]}"
 fi
+exit 0
