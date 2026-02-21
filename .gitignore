@@ -82,6 +82,9 @@ yarn-debug.log*
 yarn-error.log*
 .npm
 
+# Cloudflare
+.wrangler/
+
 # IDE
 .idea/
 .vscode/
