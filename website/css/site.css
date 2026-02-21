@@ -105,6 +105,13 @@ body {
     font-weight: 700;
     color: var(--text);
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    border-radius: 6px;
 }
 
 nav {
