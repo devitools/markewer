@@ -3,7 +3,8 @@ use notify::{Event, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
+use tauri_plugin_cli::CliExt;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Heading {

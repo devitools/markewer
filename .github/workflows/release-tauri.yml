@@ -52,8 +52,8 @@ jobs:
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          Copy-Item shared/*.css apps/tauri/src/ -Force
-          Copy-Item shared/*.js apps/tauri/src/ -Force
+          Copy-Item shared/*.css apps/tauri/src/ -Force -ErrorAction SilentlyContinue
+          Copy-Item shared/*.js apps/tauri/src/ -Force -ErrorAction SilentlyContinue
 
       - uses: tauri-apps/tauri-action@v0
         env:

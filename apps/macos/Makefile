@@ -56,7 +56,7 @@ clean:
 dist: build
 	@echo "📦 Creating DMG..."
 	@mkdir -p dist
-	@rm -f dist/Arandu-1.0.dmg
+	@rm -f dist/Arandu.dmg
 	@TMP_DIR=$$(mktemp -d) && \
 	    cp -R "$(BUILD_DIR)/Build/Products/$(CONFIG)/$(APP_NAME)" "$$TMP_DIR/$(APP_NAME)" && \
 	    ln -s /Applications "$$TMP_DIR/Applications" && \
@@ -64,6 +64,6 @@ dist: build
 	        -volname "Arandu" \
 	        -srcfolder "$$TMP_DIR" \
 	        -ov -format UDZO \
-	        dist/Arandu-1.0.dmg && \
+	        dist/Arandu.dmg && \
 	    rm -rf "$$TMP_DIR"
-	@echo "✅ DMG criado em: dist/Arandu-1.0.dmg"
+	@echo "✅ DMG criado em: dist/Arandu.dmg"

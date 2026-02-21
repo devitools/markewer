@@ -17,7 +17,7 @@ Visualizador de Markdown para macOS inspirado no [Typora](https://typora.io) e [
 
 ### Opção 1 — DMG (recomendado)
 
-1. Baixe o arquivo `Arandu-1.0.dmg` + `install.sh`
+1. Baixe o arquivo `Arandu.dmg` + `install.sh`
 2. Monte o DMG (duplo clique)
 3. Execute no terminal:
 
@@ -91,7 +91,7 @@ make install
 
 # Criar DMG de distribuição
 make dist
-# → dist/Arandu-1.0.dmg
+# → dist/Arandu.dmg
 ```
 
 ## Estrutura
