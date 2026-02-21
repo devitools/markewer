@@ -378,17 +378,60 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var openedViaCLI = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        buildMenu()
         let paths = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }
         if paths.isEmpty {
-            let panel = NSOpenPanel()
-            panel.allowsMultipleSelection = true
-            panel.canChooseDirectories = false
-            if panel.runModal() == .OK { panel.urls.forEach { openFile($0) } }
+            showOpenPanel()
         } else {
             openedViaCLI = true
             paths.forEach { openFile(URL(fileURLWithPath: $0)) }
         }
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func buildMenu() {
+        let mainMenu = NSMenu()
+
+        // App menu
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Markewer", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Quit Markewer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let appMenuItem = NSMenuItem()
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        // File menu
+        let fileMenu = NSMenu(title: "File")
+        let openItem = NSMenuItem(title: "Open…", action: #selector(openDocument), keyEquivalent: "o")
+        openItem.target = self
+        fileMenu.addItem(openItem)
+        let fileMenuItem = NSMenuItem()
+        fileMenuItem.submenu = fileMenu
+        mainMenu.addItem(fileMenuItem)
+
+        // Window menu
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        let windowMenuItem = NSMenuItem()
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+        NSApp.windowsMenu = windowMenu
+
+        NSApp.mainMenu = mainMenu
+    }
+
+    @objc func openDocument() {
+        showOpenPanel()
+    }
+
+    func showOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.init(filenameExtension: "md")!]
+        if panel.runModal() == .OK { panel.urls.forEach { openFile($0) } }
     }
 
     func openFile(_ url: URL) {
