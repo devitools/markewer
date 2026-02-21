@@ -1,0 +1,36 @@
+name: Markewer
+options:
+  bundleIdPrefix: com.techena
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15"
+  createIntermediateGroups: true
+
+packages:
+  cmark-gfm:
+    url: https://github.com/KristopherGBaker/libcmark_gfm
+    exactVersion: 0.29.4
+
+targets:
+  Markewer:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/Markewer
+    resources:
+      - Sources/Markewer/Resources
+    dependencies:
+      - package: cmark-gfm
+        product: libcmark_gfm
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.techena.markewer
+        PRODUCT_NAME: Markewer
+        INFOPLIST_FILE: Sources/Markewer/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: "-"
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        ENABLE_HARDENED_RUNTIME: NO
+        SWIFT_OBJC_BRIDGING_HEADER: ""

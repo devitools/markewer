@@ -1,0 +1,25 @@
+#!/bin/bash
+# Markewer CLI — opens Markdown files with the Markewer app
+# Usage: markewer [file.md ...]
+
+# Prefer /Applications, fall back to ~/Applications
+if [ -d "/Applications/Markewer.app" ]; then
+    APP="/Applications/Markewer.app"
+elif [ -d "$HOME/Applications/Markewer.app" ]; then
+    APP="$HOME/Applications/Markewer.app"
+else
+    echo "Markewer.app not found. Run 'make install' first." >&2
+    exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+    open "$APP"
+else
+    # Pass all files as --args to bypass the UTI document system
+    PATHS=()
+    for f in "$@"; do
+        abs=$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")
+        PATHS+=("$abs")
+    done
+    open -n "$APP" --args "${PATHS[@]}"
+fi
