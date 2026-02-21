@@ -6,6 +6,7 @@
   "permissions": [
     "core:default",
     "cli:default",
+    "dialog:default",
     "fs:default",
     "fs:allow-read-text-file",
     "updater:default"

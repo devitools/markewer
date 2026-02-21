@@ -111,6 +111,59 @@ listen("open-file", (event) => {
   loadFile(event.payload);
 });
 
+// CLI installer modals
+
+function showModal(id) {
+  document.getElementById(id).style.display = "flex";
+}
+
+function hideModal(id) {
+  document.getElementById(id).style.display = "none";
+}
+
+async function handleCliInstall() {
+  hideModal("cli-modal");
+  const result = await invoke("install_cli");
+  const titleEl = document.getElementById("cli-result-title");
+  const msgEl = document.getElementById("cli-result-message");
+  if (result.success) {
+    titleEl.textContent = "CLI Installed";
+    msgEl.textContent = `The "arandu" command was installed at:\n${result.path}\n\nYou can now use: arandu README.md`;
+    await invoke("dismiss_cli_prompt");
+  } else {
+    titleEl.textContent = "Installation Failed";
+    msgEl.textContent = result.error;
+  }
+  showModal("cli-result-modal");
+}
+
+function handleCliNotNow() {
+  if (document.getElementById("cli-dismiss-check").checked) {
+    invoke("dismiss_cli_prompt");
+  }
+  hideModal("cli-modal");
+}
+
+document.getElementById("cli-install").addEventListener("click", handleCliInstall);
+document.getElementById("cli-not-now").addEventListener("click", handleCliNotNow);
+document.getElementById("cli-result-ok").addEventListener("click", () => hideModal("cli-result-modal"));
+
+(async () => {
+  const status = await invoke("check_cli_status");
+  if (!status.installed && !status.dismissed) {
+    showModal("cli-modal");
+  }
+})();
+
+listen("menu-install-cli", () => {
+  document.getElementById("cli-dismiss-check").checked = false;
+  showModal("cli-modal");
+});
+
+listen("menu-open-file", () => {
+  openFileDialog();
+});
+
 applyTheme(currentTheme);
 
 if (!currentPath) {

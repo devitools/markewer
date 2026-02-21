@@ -155,3 +155,89 @@ html.dark {
 
 html.light link[media*="dark"] { media: not all; }
 html.dark link[media*="light"] { media: not all; }
+
+/* CLI install modals */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-box h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.modal-box p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.modal-box pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.modal-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    cursor: pointer;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modal-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.modal-btn:hover {
+    background: var(--code-bg);
+}
+
+.modal-btn-primary {
+    background: var(--link);
+    color: #fff;
+    border-color: var(--link);
+}
+
+.modal-btn-primary:hover {
+    opacity: 0.9;
+    background: var(--link);
+}
