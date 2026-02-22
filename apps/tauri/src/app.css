@@ -327,11 +327,13 @@ html.dark link[media*="light"] { media: not all; }
 /* Bottom Bar */
 
 #bottom-bar {
+  --bottom-bar-collapsed-height: 48px;
+  --bottom-bar-padding: 64px;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 48px;
+  height: var(--bottom-bar-collapsed-height);
   background: var(--sidebar-bg);
   border-top: 2px solid var(--border);
   display: none;

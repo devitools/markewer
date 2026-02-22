@@ -178,6 +178,11 @@ async function saveCommentsForFile() {
     });
   } catch (e) {
     console.error("Failed to save comments:", e);
+    const banner = document.getElementById("stale-comments-banner");
+    if (banner) {
+      banner.querySelector("span").textContent = "Failed to save comments. Changes may be lost.";
+      banner.style.display = "flex";
+    }
   }
 }
 
@@ -315,7 +320,8 @@ function showBottomBar() {
   if (bottomBar && !bottomBar.classList.contains("visible")) {
     bottomBar.classList.add("visible");
     if (contentArea) {
-      contentArea.style.paddingBottom = "64px"; // Collapsed height + margin
+      const padding = getComputedStyle(bottomBar).getPropertyValue("--bottom-bar-padding").trim() || "64px";
+      contentArea.style.paddingBottom = padding;
     }
   }
 }
@@ -391,14 +397,18 @@ function updateBottomBar() {
     const content = document.createElement("div");
     content.className = "comment-content";
 
-    // Block indicators (clickable chips showing L1, L2, L3...)
+    // Block indicators (clickable chips showing H0, P1, Li2...)
     const blockIndicators = document.createElement("div");
     blockIndicators.className = "block-indicators";
     comment.block_ids.forEach(blockId => {
       const chip = document.createElement("span");
       chip.className = "block-chip";
       const blockNum = blockId.match(/\d+$/)?.[0] || "?";
-      chip.textContent = `L${blockNum}`;
+      const typeMap = { heading: "H", para: "P", list: "Li", code: "C", quote: "Q" };
+      const typeMatch = blockId.match(/^mkw-(\w+)-/);
+      const prefix = typeMatch ? (typeMap[typeMatch[1]] || "B") : "B";
+      chip.textContent = `${prefix}${blockNum}`;
+      chip.title = `${typeMatch ? typeMatch[1] : "block"} #${blockNum}`;
       chip.onclick = () => {
         const block = document.getElementById(blockId);
         if (block) block.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -614,7 +624,8 @@ document.getElementById("bottom-bar-add-comment").addEventListener("click", () =
   if (selectedBlocks.length === 1) {
     const clone = selectedBlocks[0].cloneNode(true);
     clone.querySelectorAll(".comment-badge").forEach(el => el.remove());
-    preview.textContent = clone.textContent.substring(0, 100) + "...";
+    const text = clone.textContent.trim();
+    preview.textContent = text.length > 100 ? text.substring(0, 100) + "..." : text;
   } else {
     preview.textContent = `${selectedBlocks.length} blocks selected`;
   }
