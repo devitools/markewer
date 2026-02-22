@@ -186,6 +186,10 @@ html.light {
     --blockquote-text: #57606a;
     --table-header-bg: #f6f8fa;
     --sidebar-bg: #f5f5f7;
+    --warning-bg: #f0ad4e;
+    --warning-text: #333;
+    --error-bg: #d9534f;
+    --error-text: #fff;
 }
 
 html.dark {
@@ -200,6 +204,10 @@ html.dark {
     --blockquote-text: #98989d;
     --table-header-bg: #2c2c2e;
     --sidebar-bg: #161618;
+    --warning-bg: #a67c34;
+    --warning-text: #f2f2f7;
+    --error-bg: #a94442;
+    --error-text: #f2f2f7;
 }
 
 html.light link[media*="dark"] { media: not all; }
@@ -293,7 +301,7 @@ html.dark link[media*="light"] { media: not all; }
 
 /* Stale Comments Banner */
 
-#stale-comments-banner {
+.notification-banner {
   position: fixed;
   top: 52px;
   left: 0;
@@ -303,25 +311,40 @@ html.dark link[media*="light"] { media: not all; }
   justify-content: center;
   gap: 12px;
   padding: 8px 16px;
-  background: #f0ad4e;
-  color: #333;
   font-size: 12px;
   font-weight: 500;
   z-index: 200;
 }
 
-#stale-comments-banner button {
+.notification-banner button {
   padding: 3px 10px;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.6);
-  color: #333;
   font-size: 11px;
   cursor: pointer;
 }
 
-#stale-comments-banner button:hover {
+.notification-banner button:hover {
   background: rgba(255, 255, 255, 0.9);
+}
+
+#stale-comments-banner {
+  background: var(--warning-bg, #f0ad4e);
+  color: var(--warning-text, #333);
+}
+
+#stale-comments-banner button {
+  color: var(--warning-text, #333);
+}
+
+#save-error-banner {
+  background: var(--error-bg, #d9534f);
+  color: var(--error-text, #fff);
+}
+
+#save-error-banner button {
+  color: var(--error-text, #fff);
 }
 
 /* Bottom Bar */
@@ -441,7 +464,7 @@ html.dark link[media*="light"] { media: not all; }
 
 .bottom-bar-item.highlight {
   border-color: var(--link);
-  box-shadow: 0 0 0 2px rgba(73, 163, 255, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--link) 20%, transparent);
 }
 
 .bottom-bar-item.resolved {

@@ -1,6 +1,6 @@
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
-const { open } = window.__TAURI__.dialog;
+const { open, confirm } = window.__TAURI__.dialog;
 const { getCurrentWindow } = window.__TAURI__.window;
 
 if (navigator.userAgent.includes("Mac")) {
@@ -178,9 +178,8 @@ async function saveCommentsForFile() {
     });
   } catch (e) {
     console.error("Failed to save comments:", e);
-    const banner = document.getElementById("stale-comments-banner");
+    const banner = document.getElementById("save-error-banner");
     if (banner) {
-      banner.querySelector("span").textContent = "Failed to save comments. Changes may be lost.";
       banner.style.display = "flex";
     }
   }
@@ -432,7 +431,10 @@ function updateBottomBar() {
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.onclick = async () => {
-      const result = await confirm("Delete this comment?");
+      const result = await confirm("Delete this comment?", {
+        title: "Delete Comment",
+        kind: "warning"
+      });
       if (result) {
         deleteComment(comment.id);
       }
@@ -608,6 +610,10 @@ if (!currentPath) {
 // Bottom bar and comment event listeners
 
 document.getElementById("stale-banner-dismiss").addEventListener("click", hideStaleCommentsBanner);
+document.getElementById("save-error-dismiss").addEventListener("click", () => {
+  const banner = document.getElementById("save-error-banner");
+  if (banner) banner.style.display = "none";
+});
 
 // Click ONLY on title to toggle expand/collapse
 document.getElementById("bottom-bar-title").addEventListener("click", (e) => {
