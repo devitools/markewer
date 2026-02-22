@@ -445,6 +445,9 @@ document.getElementById("cli-result-ok").addEventListener("click", () => hideMod
   const initialFile = await invoke("get_initial_file");
   if (initialFile) {
     loadFile(initialFile);
+  } else {
+    // Show window if no initial file (allows user to open file via menu)
+    getCurrentWindow().show();
   }
 
   const status = await invoke("check_cli_status");
