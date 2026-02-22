@@ -17,6 +17,18 @@ on:
         required: true
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD:
         required: true
+      APPLE_CERTIFICATE:
+        required: false
+      APPLE_CERTIFICATE_PASSWORD:
+        required: false
+      APPLE_SIGNING_IDENTITY:
+        required: false
+      APPLE_API_ISSUER:
+        required: false
+      APPLE_API_KEY:
+        required: false
+      APPLE_API_KEY_CONTENT:
+        required: false
 
 permissions:
   contents: write
@@ -90,11 +102,21 @@ jobs:
           Copy-Item shared/*.css apps/tauri/src/ -Force -ErrorAction SilentlyContinue
           Copy-Item shared/*.js apps/tauri/src/ -Force -ErrorAction SilentlyContinue
 
+      - name: Write Apple API key to disk
+        if: matrix.platform == 'macos-latest' && secrets.APPLE_API_KEY_CONTENT != ''
+        run: echo "${{ secrets.APPLE_API_KEY_CONTENT }}" > /tmp/apple_api_key.p8
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: /tmp/apple_api_key.p8
         with:
           projectPath: apps/tauri
           tagName: ${{ inputs.tag_name }}
