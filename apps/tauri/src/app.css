@@ -7,27 +7,57 @@ html, body {
 #toolbar {
     display: flex;
     align-items: center;
-    height: 38px;
-    padding: 0 12px;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 16px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-    -webkit-app-region: drag;
     user-select: none;
+}
+
+html.macos #toolbar {
+    padding-left: 78px;
+}
+
+#toolbar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+#toolbar-app {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+#toolbar-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+#toolbar-actions {
+    display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 #toolbar button {
-    -webkit-app-region: no-drag;
     background: none;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 6px;
     color: var(--text);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 24px;
+    height: 26px;
     padding: 0;
 }
 
@@ -35,19 +65,20 @@ html, body {
     background: var(--code-bg);
 }
 
-#toolbar-title {
-    flex: 1;
-    text-align: center;
-    font-size: 13px;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+#btn-theme {
+    width: 30px;
+}
+
+#btn-refresh {
+    padding: 0 10px;
+    gap: 5px;
+    font-size: 12px;
+    font-family: var(--font-body);
 }
 
 #split {
     display: flex;
-    height: calc(100% - 38px);
+    height: calc(100% - 52px);
 }
 
 #sidebar {
@@ -55,7 +86,7 @@ html, body {
     min-width: 220px;
     border-right: 1px solid var(--border);
     overflow-y: auto;
-    background: var(--bg);
+    background: var(--sidebar-bg);
     scrollbar-width: none;
 }
 
@@ -87,10 +118,26 @@ html, body {
     background: var(--code-bg);
 }
 
-#outline-list li[data-level="1"] { padding-left: 12px; font-size: 13px; font-weight: 600; color: var(--text); }
-#outline-list li[data-level="2"] { padding-left: 24px; font-size: 12px; font-weight: 500; color: var(--text-muted); }
-#outline-list li[data-level="3"] { padding-left: 36px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
-#outline-list li[data-level="4"] { padding-left: 48px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+#outline-list li[data-level="1"] { padding-left: 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+#outline-list li[data-level="2"] { padding-left: 20px; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+#outline-list li[data-level="3"] { padding-left: 32px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+#outline-list li[data-level="4"] { padding-left: 44px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+
+#sidebar-handle {
+    width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    margin-left: -5px;
+    position: relative;
+    z-index: 10;
+}
+
+#sidebar-handle:hover,
+#sidebar-handle.active {
+    background: var(--link);
+    opacity: 0.4;
+}
 
 #content-area {
     flex: 1;
@@ -138,6 +185,7 @@ html.light {
     --blockquote-border: #d0d7de;
     --blockquote-text: #57606a;
     --table-header-bg: #f6f8fa;
+    --sidebar-bg: #f5f5f7;
 }
 
 html.dark {
@@ -151,6 +199,7 @@ html.dark {
     --blockquote-border: #48484a;
     --blockquote-text: #98989d;
     --table-header-bg: #2c2c2e;
+    --sidebar-bg: #161618;
 }
 
 html.light link[media*="dark"] { media: not all; }

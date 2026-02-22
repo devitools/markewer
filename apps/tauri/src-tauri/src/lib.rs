@@ -76,6 +76,7 @@ fn extract_headings(markdown: String) -> Vec<Heading> {
 }
 
 struct WatcherState(Mutex<Option<notify::RecommendedWatcher>>);
+struct InitialFile(Mutex<Option<String>>);
 
 #[tauri::command]
 fn watch_file(path: String, app: tauri::AppHandle, state: tauri::State<WatcherState>) -> Result<(), String> {
@@ -106,6 +107,11 @@ fn unwatch_file(state: tauri::State<WatcherState>) {
     if let Ok(mut guard) = state.0.lock() {
         *guard = None;
     }
+}
+
+#[tauri::command]
+fn get_initial_file(state: tauri::State<InitialFile>) -> Option<String> {
+    state.0.lock().ok().and_then(|mut guard| guard.take())
 }
 
 #[tauri::command]
@@ -184,6 +190,16 @@ fn setup_macos_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
         .item(&open_file_item)
         .build()?;
 
+    let edit_submenu = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
+
     let window_submenu = SubmenuBuilder::new(app, "Window")
         .minimize()
         .close_window()
@@ -192,6 +208,7 @@ fn setup_macos_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
     let menu = MenuBuilder::new(app)
         .item(&app_submenu)
         .item(&file_submenu)
+        .item(&edit_submenu)
         .item(&window_submenu)
         .build()?;
 
@@ -221,6 +238,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(WatcherState(Mutex::new(None)))
+        .manage(InitialFile(Mutex::new(None)))
         .setup(|app| {
             #[cfg(target_os = "macos")]
             setup_macos_menu(app)?;
@@ -231,7 +249,10 @@ pub fn run() {
                     if let serde_json::Value::String(path) = &arg.value {
                         if !path.is_empty() {
                             let abs = std::fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path));
-                            let _ = app.emit("open-file", abs.to_string_lossy().to_string());
+                            let initial = app.state::<InitialFile>();
+                            if let Ok(mut guard) = initial.0.lock() {
+                                *guard = Some(abs.to_string_lossy().into());
+                            };
                         }
                     }
                 }
@@ -244,10 +265,26 @@ pub fn run() {
             extract_headings,
             watch_file,
             unwatch_file,
+            get_initial_file,
             check_cli_status,
             install_cli,
             dismiss_cli_prompt,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = event {
+                for url in urls {
+                    if let Ok(path) = url.to_file_path() {
+                        let path_str = path.to_string_lossy().to_string();
+                        let initial = app_handle.state::<InitialFile>();
+                        if let Ok(mut guard) = initial.0.lock() {
+                            *guard = Some(path_str.clone());
+                        }
+                        let _ = app_handle.emit("open-file", &path_str);
+                    }
+                }
+            }
+        });
 }

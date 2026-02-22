@@ -8,9 +8,12 @@
     "devUrl": "http://localhost:1420"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Arandu",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "width": 1100,
         "height": 760,
         "minWidth": 500,

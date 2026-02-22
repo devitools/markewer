@@ -11,6 +11,7 @@
     --blockquote-border: #d0d7de;
     --blockquote-text: #57606a;
     --table-header-bg: #f6f8fa;
+    --sidebar-bg: #f5f5f7;
     --font-body: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
     --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     --max-width: 860px;
@@ -28,6 +29,7 @@
         --blockquote-border: #48484a;
         --blockquote-text: #98989d;
         --table-header-bg: #2c2c2e;
+        --sidebar-bg: #161618;
     }
 }
 

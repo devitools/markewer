@@ -1,6 +1,11 @@
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 const { open } = window.__TAURI__.dialog;
+const { getCurrentWindow } = window.__TAURI__.window;
+
+if (navigator.userAgent.includes("Mac")) {
+  document.documentElement.classList.add("macos");
+}
 
 const THEMES = ["system", "light", "dark"];
 const THEME_ICONS = {
@@ -103,6 +108,30 @@ document.getElementById("btn-refresh").addEventListener("click", () => {
 });
 document.getElementById("btn-open").addEventListener("click", openFileDialog);
 
+document.getElementById("toolbar").addEventListener("mousedown", (e) => {
+  if (e.target.closest("button")) return;
+  getCurrentWindow().startDragging();
+});
+
+const sidebarHandle = document.getElementById("sidebar-handle");
+const sidebar = document.getElementById("sidebar");
+sidebarHandle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+  sidebarHandle.classList.add("active");
+  const onMove = (ev) => {
+    const width = Math.max(120, Math.min(500, ev.clientX));
+    sidebar.style.width = width + "px";
+    sidebar.style.minWidth = width + "px";
+  };
+  const onUp = () => {
+    sidebarHandle.classList.remove("active");
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+  };
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+});
+
 listen("file-changed", () => {
   if (currentPath) loadFile(currentPath);
 });
@@ -149,6 +178,11 @@ document.getElementById("cli-not-now").addEventListener("click", handleCliNotNow
 document.getElementById("cli-result-ok").addEventListener("click", () => hideModal("cli-result-modal"));
 
 (async () => {
+  const initialFile = await invoke("get_initial_file");
+  if (initialFile) {
+    loadFile(initialFile);
+  }
+
   const status = await invoke("check_cli_status");
   if (!status.installed && !status.dismissed) {
     showModal("cli-modal");

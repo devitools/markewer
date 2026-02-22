@@ -9,19 +9,25 @@
   <script src="highlight.min.js"></script>
 </head>
 <body>
-  <div id="toolbar" data-tauri-drag-region>
-    <button id="btn-theme" title="Toggle theme (system / light / dark)">
-      <svg id="icon-theme" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
-      </svg>
-    </button>
-    <span id="toolbar-title"></span>
-    <button id="btn-refresh" title="Refresh">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/>
-        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-      </svg>
-    </button>
+  <div id="toolbar">
+    <div id="toolbar-info">
+      <span id="toolbar-app">Arandu</span>
+      <span id="toolbar-title"></span>
+    </div>
+    <div id="toolbar-actions">
+      <button id="btn-theme" title="Toggle theme (system / light / dark)">
+        <svg id="icon-theme" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
+        </svg>
+      </button>
+      <button id="btn-refresh" title="Refresh">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+        </svg>
+        <span>Refresh</span>
+      </button>
+    </div>
   </div>
 
   <div id="split">
@@ -29,6 +35,7 @@
       <div id="sidebar-header">OUTLINE</div>
       <ul id="outline-list"></ul>
     </div>
+    <div id="sidebar-handle"></div>
     <div id="content-area">
       <div id="content" class="markdown-body"></div>
       <div id="empty-state">
