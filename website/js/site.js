@@ -73,7 +73,7 @@
       item.addEventListener('click', function () {
         const target = document.getElementById(item.dataset.target)
         if (!target) return
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        mockupContent.scrollTo({ top: target.offsetTop - mockupContent.offsetTop, behavior: 'smooth' })
         outlineItems.forEach(function (el) { el.classList.remove('active') })
         item.classList.add('active')
       })
