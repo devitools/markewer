@@ -18,6 +18,12 @@ cask "arandu" do
 
   app "Arandu.app"
 
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-cr", "#{appdir}/Arandu.app"],
+                   sudo: false
+  end
+
   zap trash: [
     "~/Library/Application Support/com.devitools.arandu",
     "~/Library/Caches/com.devitools.arandu",
