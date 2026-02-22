@@ -180,7 +180,10 @@ function addComment(text) {
   // Clear selection
   selectedBlock.classList.remove("selected");
   selectedBlock = null;
-  document.getElementById("bottom-bar-add-comment").style.display = "none";
+  const addBtn = document.getElementById("bottom-bar-add-comment");
+  if (addBtn) {
+    addBtn.style.display = "none";
+  }
 }
 
 function deleteComment(commentId) {
@@ -253,14 +256,21 @@ function selectBlock(block) {
   selectedBlock = block;
 
   // Show add comment button in bottom bar
-  document.getElementById("bottom-bar-add-comment").style.display = "block";
+  const addBtn = document.getElementById("bottom-bar-add-comment");
+  if (addBtn) {
+    addBtn.style.display = "block";
+  }
 }
 
 function updateBottomBar() {
-  const count = commentsData.comments.length;
-  document.getElementById("comment-count").textContent = count;
-
+  const countEl = document.getElementById("comment-count");
   const list = document.getElementById("bottom-bar-list");
+
+  // Elements may not exist yet during initial load
+  if (!countEl || !list) return;
+
+  const count = commentsData.comments.length;
+  countEl.textContent = count;
   list.innerHTML = "";
 
   if (count === 0) {
