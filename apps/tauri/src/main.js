@@ -10,14 +10,14 @@ if (navigator.userAgent.includes("Mac")) {
 const THEMES = ["system", "light", "dark"];
 const THEME_ICONS = {
   system: '<path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>',
-  light: '<circle cx="8" cy="8" r="3"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42"/>',
+  light: '<circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
   dark: '<path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792 0 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278z"/>',
 };
 
 let currentTheme = localStorage.getItem("arandu-theme") || "system";
 let currentPath = null;
 let commentsData = { version: "1.0", file_hash: "", comments: [] };
-let selectedBlock = null;
+let selectedBlocks = [];
 
 function applyTheme(theme) {
   currentTheme = theme;
@@ -144,6 +144,11 @@ async function loadCommentsForFile(markdownPath) {
     commentsData.file_hash = currentHash;
     renderCommentBadges();
     updateBottomBar();
+
+    // Show bottom bar if there are existing comments
+    if (commentsData.comments.length > 0) {
+      showBottomBar();
+    }
   } catch (e) {
     console.error("Failed to load comments:", e);
     commentsData = { version: "1.0", file_hash: "", comments: [] };
@@ -163,13 +168,12 @@ async function saveCommentsForFile() {
 }
 
 function addComment(text) {
-  if (!selectedBlock) return;
+  if (selectedBlocks.length === 0) return;
 
+  // Create a single comment with all selected block IDs
   const comment = {
     id: crypto.randomUUID(),
-    block_id: selectedBlock.id,
-    block_type: selectedBlock.tagName.toLowerCase(),
-    block_text: selectedBlock.textContent.substring(0, 100),
+    block_ids: selectedBlocks.map(block => block.id),
     text: text,
     timestamp: Date.now(),
     resolved: false,
@@ -181,11 +185,15 @@ function addComment(text) {
   updateBottomBar();
 
   // Clear selection
-  selectedBlock.classList.remove("selected");
-  selectedBlock = null;
+  selectedBlocks.forEach(block => {
+    block.classList.remove("selected");
+  });
+  selectedBlocks = [];
+
   const addBtn = document.getElementById("bottom-bar-add-comment");
   if (addBtn) {
     addBtn.style.display = "none";
+    addBtn.textContent = "+ Add Comment";
   }
 }
 
@@ -194,6 +202,11 @@ function deleteComment(commentId) {
   saveCommentsForFile();
   renderCommentBadges();
   updateBottomBar();
+
+  // Hide bottom bar if no comments left
+  if (commentsData.comments.length === 0) {
+    hideBottomBar();
+  }
 }
 
 function toggleResolve(commentId) {
@@ -209,13 +222,15 @@ function renderCommentBadges() {
   // Remove existing badges
   document.querySelectorAll(".comment-badge").forEach(el => el.remove());
 
-  // Group comments by block_id
+  // Group comments by block_id (now need to iterate block_ids array)
   const commentsByBlock = {};
   commentsData.comments.forEach(comment => {
-    if (!commentsByBlock[comment.block_id]) {
-      commentsByBlock[comment.block_id] = [];
-    }
-    commentsByBlock[comment.block_id].push(comment);
+    comment.block_ids.forEach(blockId => {
+      if (!commentsByBlock[blockId]) {
+        commentsByBlock[blockId] = [];
+      }
+      commentsByBlock[blockId].push(comment);
+    });
   });
 
   // Add badges to blocks with comments
@@ -231,7 +246,7 @@ function renderCommentBadges() {
 
     badge.onclick = (e) => {
       e.stopPropagation();
-      scrollToCommentInBottomBar(blockId);
+      expandBottomBar();
     };
 
     block.style.position = "relative";
@@ -239,8 +254,8 @@ function renderCommentBadges() {
   });
 }
 
-function scrollToCommentInBottomBar(blockId) {
-  const commentItem = document.querySelector(`[data-block-id="${blockId}"]`);
+function scrollToCommentInBottomBar(commentId) {
+  const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
   if (commentItem) {
     commentItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
     commentItem.classList.add("highlight");
@@ -248,20 +263,82 @@ function scrollToCommentInBottomBar(blockId) {
   }
 }
 
-function selectBlock(block) {
-  // Remove previous selection
-  document.querySelectorAll(".commentable-block.selected").forEach(el => {
-    el.classList.remove("selected");
-  });
+function expandBottomBar() {
+  const bottomBar = document.getElementById("bottom-bar");
+  if (bottomBar) {
+    bottomBar.classList.add("expanded");
+  }
+}
 
-  // Add selection to clicked block
-  block.classList.add("selected");
-  selectedBlock = block;
+function collapseBottomBar() {
+  const bottomBar = document.getElementById("bottom-bar");
+  if (bottomBar) {
+    bottomBar.classList.remove("expanded");
+  }
+}
 
-  // Show add comment button in bottom bar
+function toggleBottomBar() {
+  const bottomBar = document.getElementById("bottom-bar");
+  if (bottomBar) {
+    bottomBar.classList.toggle("expanded");
+  }
+}
+
+function showBottomBar() {
+  const bottomBar = document.getElementById("bottom-bar");
+  const contentArea = document.getElementById("content-area");
+  if (bottomBar && !bottomBar.classList.contains("visible")) {
+    bottomBar.classList.add("visible");
+    if (contentArea) {
+      contentArea.style.paddingBottom = "64px"; // Collapsed height + margin
+    }
+  }
+}
+
+function hideBottomBar() {
+  const bottomBar = document.getElementById("bottom-bar");
+  const contentArea = document.getElementById("content-area");
+  if (bottomBar && bottomBar.classList.contains("visible")) {
+    bottomBar.classList.remove("visible");
+    if (contentArea) {
+      contentArea.style.paddingBottom = "0";
+    }
+  }
+}
+
+function selectBlock(block, multiSelect = false) {
+  if (multiSelect) {
+    // Cmd/Ctrl+click: toggle this block in selection
+    const idx = selectedBlocks.indexOf(block);
+    if (idx > -1) {
+      selectedBlocks.splice(idx, 1);
+      block.classList.remove("selected");
+    } else {
+      selectedBlocks.push(block);
+      block.classList.add("selected");
+    }
+  } else {
+    // Regular click: clear previous selection and select only this block
+    document.querySelectorAll(".commentable-block.selected").forEach(el => {
+      el.classList.remove("selected");
+    });
+    selectedBlocks = [block];
+    block.classList.add("selected");
+  }
+
+  // Show add comment button if at least one block is selected
   const addBtn = document.getElementById("bottom-bar-add-comment");
   if (addBtn) {
-    addBtn.style.display = "block";
+    addBtn.style.display = selectedBlocks.length > 0 ? "block" : "none";
+    // Update button text to show count
+    addBtn.textContent = selectedBlocks.length > 1
+      ? `+ Add Comment (${selectedBlocks.length} blocks)`
+      : "+ Add Comment";
+  }
+
+  // Show bottom bar when user starts reviewing
+  if (selectedBlocks.length > 0) {
+    showBottomBar();
   }
 }
 
@@ -277,30 +354,32 @@ function updateBottomBar() {
   list.innerHTML = "";
 
   if (count === 0) {
-    list.innerHTML = '<div class="bottom-bar-empty">No comments. Select a block and click "+ Add Comment"</div>';
+    list.innerHTML = '<div class="bottom-bar-empty">No comments. Select blocks and click "+ Add Comment"</div>';
     return;
   }
 
   commentsData.comments.forEach(comment => {
     const item = document.createElement("div");
     item.className = "bottom-bar-item" + (comment.resolved ? " resolved" : "");
-    item.dataset.blockId = comment.block_id;
-
-    const lineIndicator = document.createElement("div");
-    lineIndicator.className = "line-indicator";
-    const blockNum = comment.block_id.match(/\d+$/)?.[0] || "?";
-    lineIndicator.textContent = `L${blockNum}`;
+    item.dataset.commentId = comment.id;
 
     const content = document.createElement("div");
     content.className = "comment-content";
 
-    const blockPreview = document.createElement("div");
-    blockPreview.className = "block-preview";
-    blockPreview.textContent = comment.block_text;
-    blockPreview.onclick = () => {
-      const block = document.getElementById(comment.block_id);
-      if (block) block.scrollIntoView({ behavior: "smooth", block: "center" });
-    };
+    // Block indicators (clickable chips showing L1, L2, L3...)
+    const blockIndicators = document.createElement("div");
+    blockIndicators.className = "block-indicators";
+    comment.block_ids.forEach(blockId => {
+      const chip = document.createElement("span");
+      chip.className = "block-chip";
+      const blockNum = blockId.match(/\d+$/)?.[0] || "?";
+      chip.textContent = `L${blockNum}`;
+      chip.onclick = () => {
+        const block = document.getElementById(blockId);
+        if (block) block.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      blockIndicators.appendChild(chip);
+    });
 
     const commentText = document.createElement("div");
     commentText.className = "comment-text";
@@ -311,22 +390,31 @@ function updateBottomBar() {
 
     const resolveBtn = document.createElement("button");
     resolveBtn.textContent = comment.resolved ? "Unresolve" : "Resolve";
-    resolveBtn.onclick = () => toggleResolve(comment.id);
+    resolveBtn.onclick = () => {
+      toggleResolve(comment.id);
+    };
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
-    deleteBtn.onclick = () => {
-      if (confirm("Delete this comment?")) deleteComment(comment.id);
+    deleteBtn.onclick = async () => {
+      console.log("Delete button clicked - showing confirm");
+      const result = await confirm("Delete this comment?");
+      console.log("Confirm result:", result);
+      if (result) {
+        console.log("User clicked OK - deleting comment");
+        deleteComment(comment.id);
+      } else {
+        console.log("User clicked Cancel - not deleting");
+      }
     };
 
     actions.appendChild(resolveBtn);
     actions.appendChild(deleteBtn);
 
-    content.appendChild(blockPreview);
+    content.appendChild(blockIndicators);
     content.appendChild(commentText);
     content.appendChild(actions);
 
-    item.appendChild(lineIndicator);
     item.appendChild(content);
     list.appendChild(item);
   });
@@ -336,24 +424,37 @@ function generateReviewPrompt() {
   const unresolvedComments = commentsData.comments.filter(c => !c.resolved);
 
   if (unresolvedComments.length === 0) {
-    return "# PLAN REVIEW\n\nNo unresolved comments. All feedback has been addressed.";
+    return "# Plan Review\n\nNo unresolved comments. All feedback has been addressed.";
   }
 
-  let prompt = `# PLAN REVIEW\n\n`;
-  prompt += `File: \`${currentPath}\`\n`;
-  prompt += `Generated: ${new Date().toLocaleString()}\n\n`;
-  prompt += `---\n\n`;
-  prompt += `## Review Feedback\n\n`;
-  prompt += `I've reviewed the plan and have ${unresolvedComments.length} comment${unresolvedComments.length > 1 ? 's' : ''} for improvement:\n\n`;
+  let prompt = `# Plan Review\n\n`;
 
   unresolvedComments.forEach((comment, idx) => {
-    prompt += `### ${idx + 1}. ${comment.block_type.toUpperCase()}: "${comment.block_text}"\n\n`;
-    prompt += `**Feedback:**\n${comment.text}\n\n`;
-    prompt += `---\n\n`;
-  });
+    prompt += `## Comment ${idx + 1}\n`;
 
-  prompt += `## Summary\n\n`;
-  prompt += `Please address the ${unresolvedComments.length} feedback point${unresolvedComments.length > 1 ? 's' : ''} above and update the plan accordingly.\n`;
+    // Extract block contents
+    const blockContents = comment.block_ids
+      .map(blockId => {
+        const block = document.getElementById(blockId);
+        if (!block) return null;
+        return block.textContent.trim();
+      })
+      .filter(content => content !== null);
+
+    if (blockContents.length > 0) {
+      prompt += `About the block(s):\n`;
+      blockContents.forEach(content => {
+        // Split into lines and add '> ' prefix to each line
+        const lines = content.split('\n');
+        lines.forEach(line => {
+          prompt += `> ${line}\n`;
+        });
+      });
+      prompt += `\n`;
+    }
+
+    prompt += `Message: ${comment.text}\n\n`;
+  });
 
   return prompt;
 }
@@ -362,7 +463,8 @@ function generateReviewPrompt() {
 document.addEventListener("click", (e) => {
   const block = e.target.closest(".commentable-block");
   if (block && !e.target.closest(".comment-badge")) {
-    selectBlock(block);
+    const multiSelect = e.metaKey || e.ctrlKey; // Cmd on Mac, Ctrl on Windows/Linux
+    selectBlock(block, multiSelect);
   }
 });
 
@@ -472,14 +574,25 @@ if (!currentPath) {
 }
 
 // Bottom bar and comment event listeners
+
+// Click ONLY on title to toggle expand/collapse
+document.getElementById("bottom-bar-title").addEventListener("click", (e) => {
+  toggleBottomBar();
+});
+
 document.getElementById("bottom-bar-add-comment").addEventListener("click", () => {
-  if (!selectedBlock) return;
+  if (selectedBlocks.length === 0) return;
 
   const modal = document.getElementById("comment-modal");
   const preview = document.getElementById("comment-block-preview");
   const input = document.getElementById("comment-input");
 
-  preview.textContent = selectedBlock.textContent.substring(0, 100) + "...";
+  if (selectedBlocks.length === 1) {
+    preview.textContent = selectedBlocks[0].textContent.substring(0, 100) + "...";
+  } else {
+    preview.textContent = `${selectedBlocks.length} blocks selected`;
+  }
+
   input.value = "";
   modal.style.display = "flex";
   input.focus();
@@ -514,7 +627,7 @@ document.getElementById("review-copy").addEventListener("click", async () => {
 
   try {
     await window.__TAURI__.clipboardManager.writeText(text);
-    alert("Review prompt copied to clipboard! Paste into your coding agent.");
+    alert("Review prompt copied to clipboard!");
     document.getElementById("review-modal").style.display = "none";
   } catch (e) {
     console.error("Failed to copy:", e);

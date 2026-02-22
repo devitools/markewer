@@ -32,9 +32,7 @@ struct InstallResult {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Comment {
     id: String,
-    block_id: String,
-    block_type: String,
-    block_text: String,
+    block_ids: Vec<String>,
     text: String,
     timestamp: i64,
     resolved: bool,
@@ -288,6 +286,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(WatcherState(Mutex::new(None)))
         .manage(InitialFile(Mutex::new(None)))
         .setup(|app| {
