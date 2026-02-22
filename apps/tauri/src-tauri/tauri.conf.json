@@ -4,7 +4,9 @@
   "version": "0.2.0",
   "identifier": "com.devitools.arandu",
   "build": {
-    "frontendDist": "../src"
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "python3 -m http.server 1420 --directory ../src"
   },
   "app": {
     "withGlobalTauri": true,
