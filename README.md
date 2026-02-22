@@ -1,94 +1,76 @@
 # Arandu
 
-Visualizador de Markdown para macOS inspirado no [Typora](https://typora.io) e [Marked 2](https://marked2app.com). Abre arquivos `.md` via linha de comando com renderização bonita, dark mode automático, syntax highlighting e sumário lateral.
+A minimal, cross-platform Markdown viewer powered by [Tauri](https://tauri.app).
 
-![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue)
+![macOS](https://img.shields.io/badge/macOS-13%2B-blue)
+![Linux](https://img.shields.io/badge/Linux-x86__64-orange)
+![Windows](https://img.shields.io/badge/Windows-x86__64-green)
 
-## Funcionalidades
+## Features
 
-- 📄 Renderização completa do GitHub Flavored Markdown (tabelas, checklists, strikethrough)
-- 🌙 Dark mode automático (segue o sistema)
-- 🎨 Syntax highlighting para blocos de código
-- 📑 Sumário lateral com os títulos do documento (clique para navegar)
-- 🔄 Live reload: atualiza automaticamente ao salvar o arquivo
-- 🪟 Cada arquivo abre em uma janela independente
+- GitHub Flavored Markdown rendering (tables, task lists, strikethrough, autolinks)
+- Syntax highlighting for code blocks
+- Dark / light / system theme cycling
+- Sidebar outline navigation
+- Live reload on file save
+- CLI: `arandu README.md`
 
-## Instalação
+## Installation
 
-### DMG (recomendado)
-
-1. Baixe o arquivo `Arandu.dmg` da [página de releases](https://github.com/nicollassilva/markewer/releases)
-2. Monte o DMG (duplo clique)
-3. Arraste `Arandu.app` para a pasta `Applications`
-4. Ao abrir o app pela primeira vez, ele oferece instalar o CLI `arandu` automaticamente
-
-> O CLI também pode ser instalado a qualquer momento pelo menu: **Arandu → Install Command Line Tool…**
-
-### Manual
-
-Se preferir instalar o CLI manualmente:
+### macOS (Homebrew)
 
 ```bash
-sudo cp scripts/arandu /usr/local/bin/arandu
-sudo chmod +x /usr/local/bin/arandu
+brew install --cask devitools/arandu/arandu
 ```
 
-## Uso
+### Manual Download
+
+Download the latest release for your platform from the
+[GitHub Releases](https://github.com/devitools/arandu/releases/latest) page:
+
+| Platform | Format |
+|----------|--------|
+| macOS (Apple Silicon) | `.dmg` |
+| macOS (Intel) | `.dmg` |
+| Linux | `.AppImage`, `.deb` |
+| Windows | `.exe` |
+
+> On first launch (macOS), the app offers to install the `arandu` CLI automatically.
+> It can also be installed later via the menu: **Arandu → Install Command Line Tool…**
+
+## Usage
 
 ```bash
-# Abrir um arquivo
-arandu README.md
-
-# Abrir múltiplos arquivos (cada um em uma janela)
-arandu doc1.md doc2.md
-
-# Abrir todos os .md do diretório atual
-arandu *.md
-
-# Sem argumentos — abre seletor de arquivo
-arandu
+arandu README.md           # open a file
+arandu doc1.md doc2.md     # open multiple files
+arandu *.md                # open all .md files in the current directory
+arandu                     # opens the file picker
 ```
 
-## Gatekeeper (nota importante)
+## Development
 
-O app é distribuído sem assinatura da Apple (não requer Apple Developer Program). No primeiro uso, o macOS pode bloquear. O script `install.sh` já remove a flag automaticamente. Se precisar fazer manualmente:
+### Prerequisites
+
+- [Rust](https://www.rust-lang.org/tools/install) (stable)
+- [Node.js](https://nodejs.org) 20+
+
+### Run locally
 
 ```bash
-xattr -d com.apple.quarantine ~/Applications/Arandu.app
+cd apps/tauri
+npm install
+npx tauri dev
 ```
 
-Ou: clique com botão direito no app → "Abrir" → confirme.
-
-## Build (para devs)
-
-Pré-requisitos: Xcode, [xcodegen](https://github.com/yonaskolb/XcodeGen)
+### Production build
 
 ```bash
-# Instalar xcodegen
-brew install xcodegen
-
-# Build e instalar
-make install
-
-# Criar DMG de distribuição
-make dist
-# → dist/Arandu.dmg
+cd apps/tauri
+npx tauri build
 ```
 
-## Estrutura
+### Set version across all configs
 
-```
-apps/macos/
-├── Sources/Arandu/
-│   ├── main.swift              # Código principal (AppDelegate, WindowController, CLI installer)
-│   └── Resources/
-│       ├── style.css           # CSS estilo Typora
-│       ├── highlight.min.js    # Syntax highlighting (highlight.js)
-│       ├── highlight-light.min.css
-│       └── highlight-dark.min.css
-├── scripts/
-│   ├── arandu                  # CLI script (também embarcado no app)
-│   └── install.sh              # Script de instalação para devs
-├── project.yml                 # XcodeGen spec
-└── Makefile
+```bash
+scripts/set-version.sh 0.3.0
 ```
