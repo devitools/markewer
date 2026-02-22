@@ -99,6 +99,9 @@ async function loadFile(path) {
 
     // Load comments for this file
     await loadCommentsForFile(path);
+
+    // Show window when file is loaded
+    getCurrentWindow().show();
   } catch (e) {
     console.error("Failed to load file:", e);
   }
