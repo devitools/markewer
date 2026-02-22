@@ -291,6 +291,39 @@ html.dark link[media*="light"] { media: not all; }
     background: var(--link);
 }
 
+/* Stale Comments Banner */
+
+#stale-comments-banner {
+  position: fixed;
+  top: 52px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #f0ad4e;
+  color: #333;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 200;
+}
+
+#stale-comments-banner button {
+  padding: 3px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #333;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#stale-comments-banner button:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
 /* Bottom Bar */
 
 #bottom-bar {
@@ -492,7 +525,7 @@ html.dark link[media*="light"] { media: not all; }
 }
 
 .commentable-block.selected {
-  background: rgba(73, 163, 255, 0.15);
+  background: color-mix(in srgb, var(--link) 15%, transparent);
   outline: 2px solid var(--link);
   outline-offset: -2px;
 }
@@ -527,6 +560,10 @@ html.dark link[media*="light"] { media: not all; }
   justify-content: center;
   cursor: pointer;
   user-select: none;
+}
+
+.comment-badge::after {
+  content: attr(data-count);
 }
 
 .comment-badge:hover {

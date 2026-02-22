@@ -57,6 +57,14 @@ async function loadFile(path) {
 
     document.getElementById("content").innerHTML = html;
 
+    selectedBlocks = [];
+    const addBtn = document.getElementById("bottom-bar-add-comment");
+    if (addBtn) {
+      addBtn.style.display = "none";
+      addBtn.textContent = "+ Add Comment";
+    }
+    hideStaleCommentsBanner();
+
     // Assign IDs to all commentable blocks
     let headingIdx = 0, paraIdx = 0, listIdx = 0, codeIdx = 0, quoteIdx = 0;
 
@@ -138,7 +146,9 @@ async function loadCommentsForFile(markdownPath) {
     const currentHash = await invoke("hash_file", { path: markdownPath });
 
     if (commentsData.file_hash && commentsData.file_hash !== currentHash) {
-      console.warn("Comments may be outdated - file has changed");
+      showStaleCommentsBanner();
+    } else {
+      hideStaleCommentsBanner();
     }
 
     commentsData.file_hash = currentHash;
@@ -241,7 +251,8 @@ function renderCommentBadges() {
     const count = commentsByBlock[blockId].length;
     const badge = document.createElement("div");
     badge.className = "comment-badge";
-    badge.textContent = count;
+    badge.dataset.count = String(count);
+    badge.setAttribute("aria-hidden", "true");
     badge.title = `${count} comment${count > 1 ? 's' : ''}`;
 
     badge.onclick = (e) => {
@@ -261,6 +272,16 @@ function scrollToCommentInBottomBar(commentId) {
     commentItem.classList.add("highlight");
     setTimeout(() => commentItem.classList.remove("highlight"), 1500);
   }
+}
+
+function showStaleCommentsBanner() {
+  const banner = document.getElementById("stale-comments-banner");
+  if (banner) banner.style.display = "flex";
+}
+
+function hideStaleCommentsBanner() {
+  const banner = document.getElementById("stale-comments-banner");
+  if (banner) banner.style.display = "none";
 }
 
 function expandBottomBar() {
@@ -397,14 +418,9 @@ function updateBottomBar() {
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.onclick = async () => {
-      console.log("Delete button clicked - showing confirm");
       const result = await confirm("Delete this comment?");
-      console.log("Confirm result:", result);
       if (result) {
-        console.log("User clicked OK - deleting comment");
         deleteComment(comment.id);
-      } else {
-        console.log("User clicked Cancel - not deleting");
       }
     };
 
@@ -437,7 +453,9 @@ function generateReviewPrompt() {
       .map(blockId => {
         const block = document.getElementById(blockId);
         if (!block) return null;
-        return block.textContent.trim();
+        const clone = block.cloneNode(true);
+        clone.querySelectorAll(".comment-badge").forEach(el => el.remove());
+        return clone.textContent.trim();
       })
       .filter(content => content !== null);
 
@@ -575,6 +593,8 @@ if (!currentPath) {
 
 // Bottom bar and comment event listeners
 
+document.getElementById("stale-banner-dismiss").addEventListener("click", hideStaleCommentsBanner);
+
 // Click ONLY on title to toggle expand/collapse
 document.getElementById("bottom-bar-title").addEventListener("click", (e) => {
   toggleBottomBar();
@@ -588,7 +608,9 @@ document.getElementById("bottom-bar-add-comment").addEventListener("click", () =
   const input = document.getElementById("comment-input");
 
   if (selectedBlocks.length === 1) {
-    preview.textContent = selectedBlocks[0].textContent.substring(0, 100) + "...";
+    const clone = selectedBlocks[0].cloneNode(true);
+    clone.querySelectorAll(".comment-badge").forEach(el => el.remove());
+    preview.textContent = clone.textContent.substring(0, 100) + "...";
   } else {
     preview.textContent = `${selectedBlocks.length} blocks selected`;
   }

@@ -190,11 +190,12 @@ fn load_comments(markdown_path: String) -> Result<CommentsFile, String> {
     match std::fs::read_to_string(&comments_path) {
         Ok(content) => serde_json::from_str(&content)
             .map_err(|e| format!("Parse error: {}", e)),
-        Err(_) => Ok(CommentsFile {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(CommentsFile {
             version: "1.0".to_string(),
             file_hash: String::new(),
             comments: Vec::new(),
         }),
+        Err(e) => Err(format!("Failed to load comments: {}", e)),
     }
 }
 
