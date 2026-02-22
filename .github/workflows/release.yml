@@ -104,3 +104,71 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release edit "${{ needs.create-release.outputs.tag_name }}" --repo "${{ github.repository }}" --draft=false
+
+  update-homebrew:
+    needs: [create-release, publish-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS DMGs and compute SHA256
+        id: sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+        run: |
+          BASE="https://github.com/${{ github.repository }}/releases/download/v${VERSION}"
+          curl -sL "${BASE}/Arandu_${VERSION}_aarch64.dmg" -o arm.dmg
+          curl -sL "${BASE}/Arandu_${VERSION}_x64.dmg" -o intel.dmg
+          echo "arm=$(sha256sum arm.dmg | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "intel=$(sha256sum intel.dmg | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Update Cask in homebrew tap
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          SHA_ARM: ${{ steps.sha.outputs.arm }}
+          SHA_INTEL: ${{ steps.sha.outputs.intel }}
+        run: |
+          CASK=$(cat <<RUBY
+          cask "arandu" do
+            version "${VERSION}"
+
+            on_arm do
+              sha256 "${SHA_ARM}"
+              url "https://github.com/devitools/arandu/releases/download/v#{version}/Arandu_#{version}_aarch64.dmg"
+            end
+            on_intel do
+              sha256 "${SHA_INTEL}"
+              url "https://github.com/devitools/arandu/releases/download/v#{version}/Arandu_#{version}_x64.dmg"
+            end
+
+            name "Arandu"
+            desc "Minimal Markdown viewer with GFM support, syntax highlighting, and live reload"
+            homepage "https://github.com/devitools/arandu"
+
+            depends_on macos: ">= :ventura"
+
+            app "Arandu.app"
+
+            postflight do
+              system_command "/usr/bin/xattr",
+                             args: ["-cr", "#{appdir}/Arandu.app"],
+                             sudo: false
+            end
+
+            zap trash: [
+              "~/Library/Application Support/com.devitools.arandu",
+              "~/Library/Caches/com.devitools.arandu",
+              "~/Library/Preferences/com.devitools.arandu.plist",
+            ]
+          end
+          RUBY
+          )
+
+          FILE_SHA=$(gh api repos/devitools/homebrew-arandu/contents/Casks/arandu.rb --jq '.sha')
+          CONTENT=$(echo "$CASK" | base64 -w 0)
+
+          gh api repos/devitools/homebrew-arandu/contents/Casks/arandu.rb \
+            -X PUT \
+            -f message="chore: update Cask to v${VERSION}" \
+            -f content="$CONTENT" \
+            -f sha="$FILE_SHA"
