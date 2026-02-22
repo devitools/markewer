@@ -103,8 +103,13 @@ jobs:
           Copy-Item shared/*.js apps/tauri/src/ -Force -ErrorAction SilentlyContinue
 
       - name: Write Apple API key to disk
-        if: matrix.platform == 'macos-latest' && secrets.APPLE_API_KEY_CONTENT != ''
-        run: echo "${{ secrets.APPLE_API_KEY_CONTENT }}" > /tmp/apple_api_key.p8
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ]; then
+            echo "$APPLE_API_KEY_CONTENT" > /tmp/apple_api_key.p8
+          fi
 
       - uses: tauri-apps/tauri-action@v0
         env:
