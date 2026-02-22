@@ -2,12 +2,16 @@ use comrak::{markdown_to_html, Options};
 use notify::{Event, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 use tauri_plugin_cli::CliExt;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 #[cfg(target_os = "macos")]
 mod cli_installer;
+mod tray;
+mod whisper;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Heading {
@@ -77,6 +81,8 @@ fn extract_headings(markdown: String) -> Vec<Heading> {
 
 struct WatcherState(Mutex<Option<notify::RecommendedWatcher>>);
 struct InitialFile(Mutex<Option<String>>);
+
+pub struct ExplicitQuit(pub Arc<AtomicBool>);
 
 #[tauri::command]
 fn watch_file(path: String, app: tauri::AppHandle, state: tauri::State<WatcherState>) -> Result<(), String> {
@@ -168,6 +174,23 @@ fn dismiss_cli_prompt(app: tauri::AppHandle) {
     }
 }
 
+#[tauri::command]
+fn show_recording_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("recording") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn hide_recording_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("recording") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg(target_os = "macos")]
 fn setup_macos_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
@@ -237,11 +260,107 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            eprintln!("Second instance detected: {:?}", args);
+
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+
+            if args.len() > 1 {
+                let file_path = &args[1];
+                if !file_path.is_empty() && !file_path.starts_with('-') {
+                    if let Ok(abs_path) = std::fs::canonicalize(file_path) {
+                        let path_str = abs_path.to_string_lossy().to_string();
+                        let _ = app.emit("open-file", &path_str);
+                    }
+                }
+            }
+        }))
         .manage(WatcherState(Mutex::new(None)))
         .manage(InitialFile(Mutex::new(None)))
+        .manage(ExplicitQuit(Arc::new(AtomicBool::new(false))))
+        .manage(whisper::commands::RecorderState(Mutex::new(None)))
+        .manage(whisper::commands::TranscriberState(Mutex::new(None)))
         .setup(|app| {
             #[cfg(target_os = "macos")]
             setup_macos_menu(app)?;
+
+            tray::setup(app)?;
+
+            let shortcut_str = if let Ok(app_data_dir) = app.path().app_data_dir() {
+                let settings = whisper::model_manager::load_settings(&app_data_dir);
+                settings.shortcut
+            } else {
+                whisper::model_manager::DEFAULT_SHORTCUT.to_string()
+            };
+
+            let handle = app.handle().clone();
+
+            app.global_shortcut().on_shortcut(shortcut_str.as_str(), move |_app, _shortcut, event| {
+                match event.state {
+                    ShortcutState::Pressed => {
+                        if let Some(window) = handle.get_webview_window("recording") {
+                            let _ = window.show();
+                        }
+
+                        let _ = handle.emit("start-recording", ());
+
+                        let recorder_state = handle.state::<whisper::commands::RecorderState>();
+                        if let Err(e) = whisper::commands::start_recording(recorder_state) {
+                            eprintln!("Failed to start recording: {}", e);
+                            let _ = handle.emit("recording-error", e);
+                        }
+                    }
+                    ShortcutState::Released => {
+                        let _ = handle.emit("stop-recording", ());
+
+                        let recorder_state = handle.state::<whisper::commands::RecorderState>();
+                        let transcriber_state = handle.state::<whisper::commands::TranscriberState>();
+
+                        match whisper::commands::stop_and_transcribe(
+                            recorder_state,
+                            transcriber_state,
+                            handle.clone()
+                        ) {
+                            Ok(text) => {
+                                if !text.is_empty() {
+                                    use tauri_plugin_clipboard_manager::ClipboardExt;
+                                    let _ = handle.clipboard().write_text(text);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Transcription failed: {}", e);
+                                let _ = handle.emit("transcription-error", e);
+                            }
+                        }
+
+                        if let Some(window) = handle.get_webview_window("recording") {
+                            let _ = window.hide();
+                        }
+                    }
+                }
+            })?;
+
+            // Auto-load saved whisper model
+            if let Ok(app_data_dir) = app.path().app_data_dir() {
+                let settings = whisper::model_manager::load_settings(&app_data_dir);
+                if let Some(model_id) = &settings.active_model {
+                    if let Some(path) = whisper::model_manager::model_path(&app_data_dir, model_id) {
+                        if path.exists() {
+                            if let Ok(transcriber) = whisper::transcriber::WhisperTranscriber::new(&path.to_string_lossy()) {
+                                let state = app.state::<whisper::commands::TranscriberState>();
+                                let mut guard = state.0.lock().unwrap();
+                                *guard = Some(transcriber);
+                            }
+                        }
+                    }
+                }
+            }
 
             let matches = app.cli().matches().ok();
             if let Some(matches) = matches {
@@ -269,10 +388,35 @@ pub fn run() {
             check_cli_status,
             install_cli,
             dismiss_cli_prompt,
+            show_recording_window,
+            hide_recording_window,
+            whisper::commands::start_recording,
+            whisper::commands::stop_and_transcribe,
+            whisper::commands::load_whisper_model,
+            whisper::commands::is_model_loaded,
+            whisper::commands::list_models,
+            whisper::commands::download_model,
+            whisper::commands::delete_model,
+            whisper::commands::get_whisper_settings,
+            whisper::commands::set_whisper_settings,
+            whisper::commands::set_active_model,
+            whisper::commands::set_shortcut,
+            whisper::commands::check_audio_permissions,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = &event {
+                let quit_flag = app_handle.state::<ExplicitQuit>();
+                if quit_flag.0.load(Ordering::Relaxed) {
+                    return;
+                }
+                api.prevent_exit();
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = event {
                 for url in urls {

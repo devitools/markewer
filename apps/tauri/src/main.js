@@ -3,6 +3,13 @@ const { listen } = window.__TAURI__.event;
 const { open } = window.__TAURI__.dialog;
 const { getCurrentWindow } = window.__TAURI__.window;
 
+const currentWindow = getCurrentWindow();
+
+currentWindow.onCloseRequested(async (event) => {
+  event.preventDefault();
+  await currentWindow.hide();
+});
+
 if (navigator.userAgent.includes("Mac")) {
   document.documentElement.classList.add("macos");
 }
@@ -134,6 +141,236 @@ sidebarHandle.addEventListener("mousedown", (e) => {
 
 listen("file-changed", () => {
   if (currentPath) loadFile(currentPath);
+});
+
+// Voice-to-text recording state
+
+const recordingBtn = document.getElementById("recording-btn");
+let isRecording = false;
+let currentShortcutLabel = "⌥Space";
+
+function setRecordingState(state) {
+  recordingBtn.className = "recording-" + state;
+  switch (state) {
+    case "active":
+      recordingBtn.title = "Recording... (" + currentShortcutLabel + " to stop)";
+      break;
+    case "processing":
+      recordingBtn.title = "Transcribing...";
+      break;
+    default:
+      recordingBtn.title = "Voice-to-text (" + currentShortcutLabel + ")";
+  }
+}
+
+listen("start-recording", () => {
+  isRecording = true;
+  setRecordingState("active");
+});
+
+listen("stop-recording", () => {
+  if (isRecording) {
+    isRecording = false;
+    setRecordingState("processing");
+  }
+});
+
+listen("transcription-complete", () => {
+  setRecordingState("idle");
+  isRecording = false;
+});
+
+listen("recording-error", (event) => {
+  console.error("Recording error:", event.payload);
+  isRecording = false;
+  setRecordingState("idle");
+});
+
+listen("transcription-error", (event) => {
+  console.error("Transcription error:", event.payload);
+  setRecordingState("idle");
+  isRecording = false;
+});
+
+// Whisper settings modal
+
+async function loadModelList() {
+  const models = await invoke("list_models");
+  const settings = await invoke("get_whisper_settings");
+  const list = document.getElementById("whisper-model-list");
+  list.innerHTML = "";
+
+  models.forEach((m) => {
+    const row = document.createElement("div");
+    row.className = "model-row";
+
+    const info = document.createElement("div");
+    info.className = "model-info";
+    info.innerHTML = `<strong>${m.info.id}</strong><span class="model-desc">${m.info.description}</span>`;
+
+    const actions = document.createElement("div");
+    actions.className = "model-actions";
+
+    if (m.downloaded) {
+      const isActive = settings.active_model === m.info.id;
+      const useBtn = document.createElement("button");
+      useBtn.className = "modal-btn" + (isActive ? " modal-btn-primary" : "");
+      useBtn.textContent = isActive ? "Active" : "Use";
+      useBtn.disabled = isActive;
+      useBtn.addEventListener("click", async () => {
+        await invoke("set_active_model", { modelId: m.info.id });
+        loadModelList();
+      });
+      actions.appendChild(useBtn);
+
+      if (!isActive) {
+        const delBtn = document.createElement("button");
+        delBtn.className = "modal-btn model-btn-danger";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", async () => {
+          await invoke("delete_model", { modelId: m.info.id });
+          loadModelList();
+        });
+        actions.appendChild(delBtn);
+      }
+    } else {
+      const dlBtn = document.createElement("button");
+      dlBtn.className = "modal-btn modal-btn-primary";
+      dlBtn.textContent = "Download";
+      dlBtn.addEventListener("click", async () => {
+        dlBtn.disabled = true;
+        dlBtn.textContent = "0%";
+        const unlisten = await listen("model-download-progress", (event) => {
+          const { downloaded, total } = event.payload;
+          const pct = Math.round((downloaded / total) * 100);
+          dlBtn.textContent = pct + "%";
+        });
+        try {
+          await invoke("download_model", { modelId: m.info.id });
+          unlisten();
+          loadModelList();
+        } catch (e) {
+          unlisten();
+          dlBtn.disabled = false;
+          dlBtn.textContent = "Retry";
+          console.error("Download failed:", e);
+        }
+      });
+      actions.appendChild(dlBtn);
+    }
+
+    row.appendChild(info);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("whisper-settings-close").addEventListener("click", () => {
+  hideModal("whisper-settings-modal");
+});
+
+recordingBtn.addEventListener("click", async () => {
+  if (!isRecording) {
+    const modelLoaded = await invoke("is_model_loaded");
+    if (!modelLoaded) {
+      openWhisperSettings();
+      return;
+    }
+    isRecording = true;
+    setRecordingState("active");
+    try {
+      await invoke("start_recording");
+    } catch (e) {
+      console.error("Failed to start recording:", e);
+      isRecording = false;
+      setRecordingState("idle");
+    }
+  } else {
+    isRecording = false;
+    setRecordingState("processing");
+    try {
+      const text = await invoke("stop_and_transcribe");
+      if (text) {
+        await window.__TAURI__.clipboardManager.writeText(text);
+      }
+      setRecordingState("idle");
+    } catch (e) {
+      console.error("Transcription failed:", e);
+      setRecordingState("idle");
+    }
+  }
+});
+
+document.getElementById("whisper-settings-btn").addEventListener("click", () => {
+  openWhisperSettings();
+});
+
+async function openWhisperSettings() {
+  await loadModelList();
+  const settings = await invoke("get_whisper_settings");
+  document.getElementById("shortcut-input").value = settings.shortcut || "Alt+Space";
+  showModal("whisper-settings-modal");
+}
+
+// Shortcut configuration
+const shortcutInput = document.getElementById("shortcut-input");
+const shortcutRecordBtn = document.getElementById("shortcut-record-btn");
+let recordingShortcut = false;
+
+shortcutRecordBtn.addEventListener("click", () => {
+  if (recordingShortcut) return;
+  recordingShortcut = true;
+  shortcutInput.value = "Press keys...";
+  shortcutInput.classList.add("recording-shortcut");
+  shortcutRecordBtn.textContent = "Listening...";
+  shortcutRecordBtn.disabled = true;
+});
+
+shortcutInput.addEventListener("keydown", async (e) => {
+  if (!recordingShortcut) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (e.key === "Escape") {
+    recordingShortcut = false;
+    shortcutInput.classList.remove("recording-shortcut");
+    shortcutRecordBtn.textContent = "Change";
+    shortcutRecordBtn.disabled = false;
+    const settings = await invoke("get_whisper_settings");
+    shortcutInput.value = settings.shortcut || "Alt+Space";
+    return;
+  }
+
+  if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
+
+  const parts = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.metaKey) parts.push("Super");
+
+  let key = e.key;
+  if (key === " ") key = "Space";
+  else if (key.length === 1) key = key.toUpperCase();
+  parts.push(key);
+
+  const shortcut = parts.join("+");
+  shortcutInput.value = shortcut;
+
+  try {
+    await invoke("set_shortcut", { shortcut });
+    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replace("+", "");
+    setRecordingState("idle");
+  } catch (err) {
+    shortcutInput.value = "Invalid — try again";
+    setTimeout(() => { shortcutInput.value = "Press keys..."; }, 1500);
+    return;
+  }
+
+  recordingShortcut = false;
+  shortcutInput.classList.remove("recording-shortcut");
+  shortcutRecordBtn.textContent = "Change";
+  shortcutRecordBtn.disabled = false;
 });
 
 listen("open-file", (event) => {

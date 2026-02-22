@@ -10,6 +10,10 @@
     "dialog:default",
     "fs:default",
     "fs:allow-read-text-file",
-    "updater:default"
+    "updater:default",
+    "global-shortcut:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text"
   ]
 }

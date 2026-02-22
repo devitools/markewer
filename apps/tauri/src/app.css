@@ -205,6 +205,53 @@ html.dark {
 html.light link[media*="dark"] { media: not all; }
 html.dark link[media*="light"] { media: not all; }
 
+/* Whisper controls */
+
+#whisper-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+#recording-btn {
+    width: 30px;
+    border-radius: 6px;
+    transition: color 0.2s;
+}
+
+#recording-btn.recording-idle {
+    color: var(--text-muted);
+}
+
+#recording-btn.recording-active {
+    color: #ff3b30;
+    border-color: #ff3b30;
+    animation: pulse-recording 1s ease-in-out infinite;
+}
+
+#recording-btn.recording-processing {
+    color: #ff9500;
+    border-color: #ff9500;
+    animation: pulse-recording 0.6s ease-in-out infinite;
+}
+
+#whisper-settings-btn {
+    width: 22px;
+    height: 22px;
+    border: none;
+    color: var(--text-muted);
+    padding: 0;
+}
+
+#whisper-settings-btn:hover {
+    color: var(--text);
+}
+
+@keyframes pulse-recording {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 /* CLI install modals */
 
 .modal-overlay {
@@ -289,4 +336,108 @@ html.dark link[media*="light"] { media: not all; }
 .modal-btn-primary:hover {
     opacity: 0.9;
     background: var(--link);
+}
+
+/* Whisper settings modal */
+
+.modal-box-wide {
+    max-width: 500px;
+}
+
+#whisper-model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.model-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    gap: 12px;
+}
+
+.model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.model-info strong {
+    font-size: 13px;
+    color: var(--text);
+    text-transform: capitalize;
+}
+
+.model-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.model-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.model-actions .modal-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.model-btn-danger {
+    color: #ff3b30;
+    border-color: #ff3b30;
+}
+
+.model-btn-danger:hover {
+    background: rgba(255, 59, 48, 0.1);
+}
+
+/* Shortcut config */
+
+.shortcut-config {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.shortcut-config label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.shortcut-input-row {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+}
+
+#shortcut-input {
+    flex: 1;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--code-bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    text-align: center;
+    cursor: default;
+}
+
+#shortcut-input.recording-shortcut {
+    border-color: var(--link);
+    outline: none;
 }

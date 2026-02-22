@@ -13,7 +13,7 @@ done
 if [ "$#" -eq 0 ]; then open "$APP"; else
     PATHS=(); for f in "$@"; do
         PATHS+=("$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")")
-    done; open -n "$APP" --args "${PATHS[@]}"
+    done; open "$APP" --args "${PATHS[@]}"
 fi
 "#;
 
