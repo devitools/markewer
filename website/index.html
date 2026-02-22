@@ -17,7 +17,7 @@
       <nav>
         <a href="#features">Features</a>
         <a href="#download">Download</a>
-        <a href="https://github.com/Devitools/arandu" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/devitools/arandu" target="_blank" rel="noopener">GitHub</a>
         <button id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
@@ -38,7 +38,7 @@
         <a id="cta-download" href="#download" class="btn btn-primary">
           Download for <span id="cta-os">your OS</span>
         </a>
-        <a href="https://github.com/Devitools/arandu" class="btn btn-secondary" target="_blank" rel="noopener">
+        <a href="https://github.com/devitools/arandu" class="btn btn-secondary" target="_blank" rel="noopener">
           View on GitHub
         </a>
       </div>
@@ -54,18 +54,23 @@
         <div class="mockup-body">
           <div class="mockup-sidebar">
             <div class="mockup-sidebar-header">OUTLINE</div>
-            <div class="mockup-outline-item active" data-level="1">Getting Started</div>
-            <div class="mockup-outline-item" data-level="2">Installation</div>
-            <div class="mockup-outline-item" data-level="2">Usage</div>
-            <div class="mockup-outline-item" data-level="1">Features</div>
-            <div class="mockup-outline-item" data-level="2">Syntax Highlighting</div>
-            <div class="mockup-outline-item" data-level="2">Live Reload</div>
+            <div class="mockup-outline-item active" data-level="1" data-target="mock-getting-started">Getting Started</div>
+            <div class="mockup-outline-item" data-level="2" data-target="mock-installation">Installation</div>
+            <div class="mockup-outline-item" data-level="2" data-target="mock-usage">Usage</div>
+            <div class="mockup-outline-item" data-level="1" data-target="mock-features">Features</div>
+            <div class="mockup-outline-item" data-level="2" data-target="mock-syntax">Syntax Highlighting</div>
+            <div class="mockup-outline-item" data-level="2" data-target="mock-reload">Live Reload</div>
           </div>
           <div class="mockup-content markdown-body">
-            <h1>Getting Started</h1>
+            <h1 id="mock-getting-started">Getting Started</h1>
             <p>Arandu is a minimal Markdown viewer that renders your files with beautiful typography, syntax highlighting, and a live-updating preview.</p>
-<pre><code>arandu README.md</code></pre>
-            <h2>Features</h2>
+            <h2 id="mock-installation">Installation</h2>
+<pre><code>brew install --cask devitools/arandu/arandu</code></pre>
+            <h2 id="mock-usage">Usage</h2>
+<pre><code>arandu README.md
+arandu doc1.md doc2.md
+arandu *.md</code></pre>
+            <h2 id="mock-features">Features</h2>
             <table>
               <thead>
                 <tr><th>Feature</th><th>Description</th></tr>
@@ -76,6 +81,13 @@
                 <tr><td>Live Reload</td><td>Auto-refresh on file save</td></tr>
               </tbody>
             </table>
+            <h2 id="mock-syntax">Syntax Highlighting</h2>
+            <p>Code blocks are highlighted automatically with support for over 190 languages.</p>
+<pre><code><span class="code-keyword">function</span> <span class="code-function">greet</span>(<span class="code-param">name</span>) {
+  console.<span class="code-function">log</span>(<span class="code-string">`Hello, ${name}!`</span>);
+}</code></pre>
+            <h2 id="mock-reload">Live Reload</h2>
+            <p>Arandu watches your file for changes and refreshes the preview instantly when you save from any editor.</p>
           </div>
         </div>
       </div>
@@ -184,9 +196,15 @@
           </svg>
           <h3>macOS</h3>
           <p>Tauri app</p>
-          <a href="https://github.com/Devitools/arandu/releases/latest" class="btn btn-primary">Download DMG</a>
+          <a href="https://github.com/devitools/arandu/releases/latest" class="btn btn-primary">Download DMG</a>
           <p class="brew-hint">or install with Homebrew:</p>
-          <code class="brew-cmd">brew install --cask devitools/arandu/arandu</code>
+          <div class="brew-block">
+            <code class="brew-cmd">brew install --cask devitools/arandu/arandu</code>
+            <button class="brew-copy" title="Copy to clipboard" onclick="navigator.clipboard.writeText('brew install --cask devitools/arandu/arandu');this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),1500)">
+              <svg class="icon-copy" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25z"/></svg>
+              <svg class="icon-check" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+            </button>
+          </div>
         </div>
         <div class="download-card fade-in" data-os="linux">
           <svg class="os-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -195,8 +213,8 @@
           <h3>Linux</h3>
           <p>Tauri app</p>
           <div class="download-links">
-            <a href="https://github.com/Devitools/arandu/releases/latest" class="btn btn-primary">AppImage</a>
-            <a href="https://github.com/Devitools/arandu/releases/latest" class="btn btn-secondary">.deb</a>
+            <a href="https://github.com/devitools/arandu/releases/latest" class="btn btn-primary">AppImage</a>
+            <a href="https://github.com/devitools/arandu/releases/latest" class="btn btn-secondary">.deb</a>
           </div>
         </div>
         <div class="download-card fade-in" data-os="windows">
@@ -205,7 +223,7 @@
           </svg>
           <h3>Windows</h3>
           <p>Tauri app</p>
-          <a href="https://github.com/Devitools/arandu/releases/latest" class="btn btn-primary">Download .exe</a>
+          <a href="https://github.com/devitools/arandu/releases/latest" class="btn btn-primary">Download .exe</a>
         </div>
       </div>
     </div>
@@ -213,8 +231,8 @@
 
   <footer>
     <div class="container footer-inner">
-      <span>&copy; 2026 Devitools</span>
-      <a href="https://github.com/Devitools/arandu" target="_blank" rel="noopener">GitHub</a>
+      <span>&copy; 2026 devitools</span>
+      <a href="https://github.com/devitools/arandu" target="_blank" rel="noopener">GitHub</a>
     </div>
   </footer>
 
