@@ -162,6 +162,10 @@ async function loadCommentsForFile(markdownPath) {
   } catch (e) {
     console.error("Failed to load comments:", e);
     commentsData = { version: "1.0", file_hash: "", comments: [] };
+    renderCommentBadges();
+    updateBottomBar();
+    hideBottomBar();
+    hideStaleCommentsBanner();
   }
 }
 

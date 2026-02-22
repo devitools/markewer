@@ -211,9 +211,9 @@ fn save_comments(markdown_path: String, comments_data: CommentsFile) -> Result<(
 #[tauri::command]
 fn hash_file(path: String) -> Result<String, String> {
     use sha2::{Sha256, Digest};
-    let content = std::fs::read_to_string(&path)
+    let content = std::fs::read(&path)
         .map_err(|e| format!("Read error: {}", e))?;
-    let hash = Sha256::digest(content.as_bytes());
+    let hash = Sha256::digest(&content);
     Ok(format!("{:x}", hash))
 }
 
