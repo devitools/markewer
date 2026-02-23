@@ -5,6 +5,18 @@ use std::path::PathBuf;
 use std::process::Command;
 
 const CLI_SCRIPT: &str = r#"#!/bin/bash
+SOCKET="$HOME/.arandu/arandu.sock"
+
+# Se socket existe, usar IPC (caminho rápido)
+if [ -S "$SOCKET" ]; then
+    for f in "$@"; do
+        ABS="$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")"
+        echo "{\"command\":\"open\",\"path\":\"$ABS\"}" | nc -U "$SOCKET" -w 2 2>/dev/null
+    done
+    exit 0
+fi
+
+# Fallback: método tradicional com open (inicia app se necessário)
 APP=""
 for p in "/Applications/Arandu.app" "$HOME/Applications/Arandu.app"; do
     [ -d "$p" ] && APP="$p" && break
