@@ -97,17 +97,11 @@ body:not(.no-file) #toolbar-info {
     height: 14px;
 }
 
-#btn-refresh svg {
-    width: 14px;
-    height: 14px;
-}
-
-#toolbar #btn-refresh {
-    padding: 4px 12px;
+#btn-refresh {
+    padding: 0 10px;
     gap: 5px;
     font-size: 12px;
     font-family: var(--font-body);
-    width: auto;
 }
 
 #split {
