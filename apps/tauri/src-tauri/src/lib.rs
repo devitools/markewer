@@ -376,13 +376,13 @@ pub fn run() {
                 let file_path = &args[1];
                 eprintln!("[DEBUG] Processing file argument: {:?}", file_path);
                 if !file_path.is_empty() && !file_path.starts_with('-') {
-                    if let Ok(abs_path) = std::fs::canonicalize(file_path) {
-                        let path_str = abs_path.to_string_lossy().to_string();
-                        eprintln!("[DEBUG] Emitting open-file with: {:?}", path_str);
-                        let _ = app.emit("open-file", &path_str);
-                    } else {
-                        eprintln!("[DEBUG] Failed to canonicalize path: {:?}", file_path);
-                    }
+                    let abs_path = std::fs::canonicalize(file_path).unwrap_or_else(|e| {
+                        eprintln!("[DEBUG] Canonicalize failed ({}), using as-is", e);
+                        PathBuf::from(file_path)
+                    });
+                    let path_str = abs_path.to_string_lossy().to_string();
+                    eprintln!("[DEBUG] Emitting open-file with: {:?}", path_str);
+                    let _ = app.emit("open-file", &path_str);
                 }
             }
         }))
