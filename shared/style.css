@@ -87,7 +87,6 @@ code {
     border-radius: 3px;
     border: 1px solid var(--border);
     overflow-wrap: break-word;
-    word-wrap: break-word;
     word-break: break-all;
 }
 

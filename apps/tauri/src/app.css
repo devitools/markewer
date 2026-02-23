@@ -843,7 +843,6 @@ html.dark link[media*="light"] { media: not all; }
   margin-bottom: 10px;
   max-height: 80px;
   overflow-y: auto;
-  word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
