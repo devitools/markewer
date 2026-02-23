@@ -305,31 +305,6 @@ html.dark link[media*="light"] { media: not all; }
     gap: 8px;
 }
 
-.modal-btn {
-    padding: 6px 16px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.modal-btn:hover {
-    background: var(--code-bg);
-}
-
-.modal-btn-primary {
-    background: var(--link);
-    color: #fff;
-    border-color: var(--link);
-}
-
-.modal-btn-primary:hover {
-    opacity: 0.9;
-    background: var(--link);
-}
-
 /* Stale Comments Banner */
 
 .notification-banner {
