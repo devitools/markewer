@@ -1,4 +1,4 @@
-.PHONY: all generate build install install-script uninstall clean dist
+.PHONY: all generate build build-debug install install-script uninstall clean dist
 
 SCHEME      = Arandu
 CONFIG      = Release
@@ -9,6 +9,8 @@ CLI_DEST    = /usr/local/bin/arandu
 
 all: generate build
 
+dev: generate build-debug
+
 generate:
 	xcodegen generate
 
@@ -16,6 +18,16 @@ build: generate
 	xcodebuild \
 	    -scheme $(SCHEME) \
 	    -configuration $(CONFIG) \
+	    -derivedDataPath $(BUILD_DIR) \
+	    CODE_SIGN_IDENTITY="-" \
+	    CODE_SIGNING_REQUIRED=NO \
+	    CODE_SIGNING_ALLOWED=NO \
+	    $(if $(shell which xcpretty 2>/dev/null),| xcpretty,)
+
+build-debug: generate
+	xcodebuild \
+	    -scheme $(SCHEME) \
+	    -configuration Debug \
 	    -derivedDataPath $(BUILD_DIR) \
 	    CODE_SIGN_IDENTITY="-" \
 	    CODE_SIGNING_REQUIRED=NO \
