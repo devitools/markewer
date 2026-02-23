@@ -157,6 +157,8 @@ where
 
     let response = reqwest::get(model.url)
         .await
+        .map_err(|e| format!("Download failed: {}", e))?
+        .error_for_status()
         .map_err(|e| format!("Download failed: {}", e))?;
 
     let total = response.content_length().unwrap_or(model.size_bytes);

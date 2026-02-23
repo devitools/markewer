@@ -45,9 +45,9 @@ pub struct AudioRecorder {
     selected_device_name: Option<String>,
 }
 
-// SAFETY: cpal::Stream on macOS contains raw pointers (AudioObjectPropertyListener)
-// that prevent auto-deriving Send/Sync. However, we serialize all access through a
-// Mutex in RecorderState, so cross-thread access is safe.
+// SAFETY: cpal <0.17 on macOS has non-Send/Sync Stream due to
+// AudioObjectPropertyListener FFI pointers. All access is serialized
+// through RecorderState's Mutex. Can be removed when upgrading to cpal >= 0.17.
 unsafe impl Send for AudioRecorder {}
 unsafe impl Sync for AudioRecorder {}
 
@@ -249,7 +249,7 @@ impl AudioRecorder {
         }
 
         eprintln!("Captured {} samples, RMS: {:.4}, duration: {:.2}s",
-            raw.len(), rms, raw.len() as f32 / WHISPER_SAMPLE_RATE as f32
+            raw.len(), rms, raw.len() as f32 / self.device_sample_rate as f32
         );
 
         if self.device_sample_rate == WHISPER_SAMPLE_RATE {

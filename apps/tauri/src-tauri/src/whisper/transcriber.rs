@@ -34,9 +34,10 @@ impl WhisperTranscriber {
 
         let mut text = String::new();
         for i in 0..num_segments {
-            if let Ok(segment) = state.full_get_segment_text(i) {
-                text.push_str(&segment);
-            }
+            let segment = state
+                .full_get_segment_text(i)
+                .map_err(|e| format!("Failed to get segment {i}: {e}"))?;
+            text.push_str(&segment);
         }
         Ok(text.trim().to_string())
     }

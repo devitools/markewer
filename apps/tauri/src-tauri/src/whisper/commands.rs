@@ -69,13 +69,13 @@ pub fn stop_and_transcribe(
     let is_recording = app.state::<crate::IsRecording>();
     is_recording.0.store(false, Ordering::Relaxed);
 
-    let audio = {
+    let mut recorder = {
         let mut guard = recorder_state.0.lock().map_err(|e| e.to_string())?;
-        match guard.take() {
-            Some(mut recorder) => recorder.stop()?,
-            None => return Err("No active recording".to_string()),
-        }
+        guard
+            .take()
+            .ok_or_else(|| "No active recording".to_string())?
     };
+    let audio = recorder.stop()?;
 
     if audio.is_empty() {
         return Err("No audio captured".to_string());
@@ -190,7 +190,13 @@ pub fn set_active_model(
 
 #[tauri::command]
 pub fn set_shortcut(shortcut: String, app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_global_shortcut::Shortcut;
+
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+
+    shortcut
+        .parse::<Shortcut>()
+        .map_err(|e| format!("Invalid shortcut '{}': {}", shortcut, e))?;
 
     app.global_shortcut()
         .unregister_all()
@@ -199,14 +205,11 @@ pub fn set_shortcut(shortcut: String, app: tauri::AppHandle) -> Result<(), Strin
     let handle = app.clone();
     app.global_shortcut()
         .on_shortcut(shortcut.as_str(), move |_app, _shortcut, event| {
-            match event.state {
-                tauri_plugin_global_shortcut::ShortcutState::Pressed => {
-                    crate::handle_recording_toggle(&handle);
-                }
-                tauri_plugin_global_shortcut::ShortcutState::Released => {}
+            if let tauri_plugin_global_shortcut::ShortcutState::Pressed = event.state {
+                crate::handle_recording_toggle(&handle);
             }
         })
-        .map_err(|e| format!("Invalid shortcut '{}': {}", shortcut, e))?;
+        .map_err(|e| format!("Failed to register shortcut '{}': {}", shortcut, e))?;
 
     let mut settings = model_manager::load_settings(&app_data_dir);
     settings.shortcut = shortcut;

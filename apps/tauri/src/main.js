@@ -538,9 +538,11 @@ function closeFile() {
   // Clear comments state
   selectedBlocks = [];
   commentsData = { version: "1.0", file_hash: "", comments: [] };
+  hideBottomBar();
   const bottomBar = document.getElementById("bottom-bar");
   if (bottomBar) {
-    bottomBar.style.display = "none";
+    bottomBar.classList.remove("expanded");
+    bottomBar.style.display = "";
   }
   hideStaleCommentsBanner();
 }
@@ -602,28 +604,34 @@ function setRecordingState(state) {
 
 listen("start-recording-shortcut", () => {
   isRecording = true;
+  setRecordingState("active");
 });
 
 listen("start-recording-button", () => {
   isRecording = true;
+  setRecordingState("active");
 });
 
 listen("stop-recording", () => {
   isRecording = false;
+  setRecordingState("processing");
 });
 
 listen("transcription-complete", () => {
   isRecording = false;
+  setRecordingState("idle");
 });
 
 listen("recording-error", (event) => {
   console.error("Recording error:", event.payload);
   isRecording = false;
+  setRecordingState("idle");
 });
 
 listen("transcription-error", (event) => {
   console.error("Transcription error:", event.payload);
   isRecording = false;
+  setRecordingState("idle");
 });
 
 // Whisper settings modal
@@ -640,7 +648,15 @@ async function loadModelList() {
 
     const info = document.createElement("div");
     info.className = "model-info";
-    info.innerHTML = `<strong>${m.info.id}</strong><span class="model-desc">${m.info.description}</span>`;
+
+    const strong = document.createElement("strong");
+    strong.textContent = m.info.id;
+    info.appendChild(strong);
+
+    const desc = document.createElement("span");
+    desc.className = "model-desc";
+    desc.textContent = m.info.description;
+    info.appendChild(desc);
 
     const actions = document.createElement("div");
     actions.className = "model-actions";
@@ -721,7 +737,12 @@ document.addEventListener("DOMContentLoaded", () => {
     thresholdInput.addEventListener("change", async (e) => {
       try {
         const settings = await invoke("get_whisper_settings");
-        settings.long_recording_threshold = parseInt(e.target.value);
+        const raw = parseInt(e.target.value, 10);
+        const value = Number.isFinite(raw) && raw > 0
+          ? raw
+          : (settings.long_recording_threshold || 60);
+        settings.long_recording_threshold = value;
+        e.target.value = value;
         await invoke("set_whisper_settings", { settings });
       } catch (err) {
         console.error("Failed to save threshold:", err);
@@ -755,9 +776,17 @@ async function openWhisperSettings() {
   try {
     const devices = await invoke("list_audio_devices");
     const deviceSelect = document.getElementById("device-select");
-    deviceSelect.innerHTML = '<option value="">System Default</option>' + devices.map(d =>
-      `<option value="${d.name}">${d.name}${d.is_default ? ' (Default)' : ''}</option>`
-    ).join('');
+    deviceSelect.innerHTML = "";
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "System Default";
+    deviceSelect.appendChild(defaultOpt);
+    devices.forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.name;
+      opt.textContent = `${d.name}${d.is_default ? " (Default)" : ""}`;
+      deviceSelect.appendChild(opt);
+    });
 
     const settings = await invoke("get_whisper_settings");
     if (settings.selected_device) {
@@ -785,6 +814,7 @@ shortcutRecordBtn.addEventListener("click", () => {
   shortcutInput.classList.add("recording-shortcut");
   shortcutRecordBtn.textContent = "Listening...";
   shortcutRecordBtn.disabled = true;
+  setTimeout(() => shortcutInput.focus(), 0);
 });
 
 shortcutInput.addEventListener("keydown", async (e) => {
@@ -820,7 +850,7 @@ shortcutInput.addEventListener("keydown", async (e) => {
 
   try {
     await invoke("set_shortcut", { shortcut });
-    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replace("+", "");
+    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replaceAll("+", "");
     setRecordingState("idle");
   } catch (err) {
     shortcutInput.value = "Invalid — try again";
@@ -933,8 +963,8 @@ document.getElementById("bottom-bar-add-comment").addEventListener("click", () =
   if (selectedBlocks.length === 1) {
     const clone = selectedBlocks[0].cloneNode(true);
     clone.querySelectorAll(".comment-badge").forEach(el => el.remove());
-    const text = clone.textContent.trim().replace(/\s+/g, ' ');
-    preview.textContent = text.length > 150 ? text.substring(0, 150) + "..." : text;
+    const text = clone.textContent.trim();
+    preview.textContent = text.length > 100 ? text.substring(0, 100) + "..." : text;
   } else {
     preview.textContent = `${selectedBlocks.length} blocks selected`;
   }
