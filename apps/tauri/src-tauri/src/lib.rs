@@ -381,14 +381,23 @@ pub fn run() {
 
             let handle = app.handle().clone();
 
-            app.global_shortcut().on_shortcut(shortcut_str.as_str(), move |_app, _shortcut, event| {
-                match event.state {
-                    ShortcutState::Pressed => {
+            let register = app.global_shortcut().on_shortcut(shortcut_str.as_str(), move |_app, _shortcut, event| {
+                if let ShortcutState::Pressed = event.state {
+                    handle_recording_toggle(&handle);
+                }
+            });
+
+            if let Err(e) = register {
+                eprintln!("Invalid shortcut '{}': {e}. Falling back to default.", shortcut_str);
+                let handle = app.handle().clone();
+                if let Err(e) = app.global_shortcut().on_shortcut(whisper::model_manager::DEFAULT_SHORTCUT, move |_app, _shortcut, event| {
+                    if let ShortcutState::Pressed = event.state {
                         handle_recording_toggle(&handle);
                     }
-                    ShortcutState::Released => {}
+                }) {
+                    eprintln!("Failed to register default shortcut: {e}");
                 }
-            })?;
+            }
 
             // Auto-load saved whisper model
             if let Ok(app_data_dir) = app.path().app_data_dir() {

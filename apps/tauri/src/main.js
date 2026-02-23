@@ -538,9 +538,11 @@ function closeFile() {
   // Clear comments state
   selectedBlocks = [];
   commentsData = { version: "1.0", file_hash: "", comments: [] };
+  hideBottomBar();
   const bottomBar = document.getElementById("bottom-bar");
   if (bottomBar) {
-    bottomBar.style.display = "none";
+    bottomBar.classList.remove("expanded");
+    bottomBar.style.display = "";
   }
   hideStaleCommentsBanner();
 }
@@ -602,28 +604,34 @@ function setRecordingState(state) {
 
 listen("start-recording-shortcut", () => {
   isRecording = true;
+  setRecordingState("active");
 });
 
 listen("start-recording-button", () => {
   isRecording = true;
+  setRecordingState("active");
 });
 
 listen("stop-recording", () => {
   isRecording = false;
+  setRecordingState("processing");
 });
 
 listen("transcription-complete", () => {
   isRecording = false;
+  setRecordingState("idle");
 });
 
 listen("recording-error", (event) => {
   console.error("Recording error:", event.payload);
   isRecording = false;
+  setRecordingState("idle");
 });
 
 listen("transcription-error", (event) => {
   console.error("Transcription error:", event.payload);
   isRecording = false;
+  setRecordingState("idle");
 });
 
 // Whisper settings modal

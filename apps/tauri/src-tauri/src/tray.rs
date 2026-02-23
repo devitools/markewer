@@ -90,6 +90,16 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     t * t * (3.0 - 2.0 * t)
 }
 
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    } else {
+        eprintln!("Warning: main window not found");
+    }
+}
+
 pub fn setup(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let show = MenuItemBuilder::with_id("show", "Show Window").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
@@ -104,13 +114,7 @@ pub fn setup(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .menu(&menu)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "show" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                } else {
-                    eprintln!("Warning: main window not found");
-                }
+                show_main_window(app);
             }
             "quit" => {
                 if let Some(state) = app.try_state::<crate::ExplicitQuit>() {
@@ -127,14 +131,7 @@ pub fn setup(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 ..
             } = event
             {
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                } else {
-                    eprintln!("Warning: main window not found on tray click");
-                }
+                show_main_window(tray.app_handle());
             }
         });
 

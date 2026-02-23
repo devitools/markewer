@@ -397,6 +397,17 @@
       document.getElementById('error-message').textContent = shortMsg;
     }
 
+    function resetRecordingUi() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      recordingStartTime = null;
+      recordingMode = null;
+      const manualControls = document.getElementById('manual-controls');
+      if (manualControls) manualControls.style.display = 'none';
+    }
+
     function showState(stateName) {
       document.querySelectorAll('.state').forEach(el => {
         el.classList.remove('active');
@@ -454,6 +465,11 @@
       showError(event.payload);
     });
 
+    listen('recording-error', (event) => {
+      resetRecordingUi();
+      showError(event.payload);
+    });
+
     document.getElementById('btn-stop').addEventListener('click', async () => {
       stopRecording();
 
@@ -468,10 +484,12 @@
 
     document.getElementById('btn-cancel').addEventListener('click', async () => {
       try {
+        resetRecordingUi();
         await invoke('cancel_recording');
         currentWindow.hide();
       } catch (error) {
         console.error("Failed to cancel recording:", error);
+        resetRecordingUi();
         currentWindow.hide();
       }
     });
@@ -505,10 +523,12 @@
       if (e.key === 'Escape') {
         e.preventDefault();
         try {
+          resetRecordingUi();
           await invoke('cancel_recording');
           currentWindow.hide();
         } catch (error) {
           console.error("Failed to cancel recording:", error);
+          resetRecordingUi();
           currentWindow.hide();
         }
       }

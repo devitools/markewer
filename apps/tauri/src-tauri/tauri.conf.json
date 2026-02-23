@@ -5,7 +5,6 @@
   "identifier": "com.devitools.arandu",
   "build": {
     "beforeDevCommand": "npm run dev:server",
-    "beforeBuildCommand": "",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../src"
   },
