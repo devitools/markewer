@@ -76,6 +76,16 @@ fn check_microphone_permission() -> Result<bool, String> {
     Ok(true)
 }
 
+impl Drop for AudioRecorder {
+    fn drop(&mut self) {
+        if let Some(stream) = self.stream.take() {
+            let _ = stream.pause();
+            drop(stream);
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
+    }
+}
+
 impl AudioRecorder {
     pub fn new(device_name: Option<String>) -> Result<Self, String> {
         #[cfg(target_os = "macos")]
@@ -218,7 +228,11 @@ impl AudioRecorder {
     pub fn stop(&mut self) -> Result<Vec<f32>, String> {
         std::thread::sleep(std::time::Duration::from_millis(50));
 
-        self.stream.take();
+        if let Some(stream) = self.stream.take() {
+            let _ = stream.pause();
+            drop(stream);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(200));
 
         let audio_received = {
             let tracker = self.last_audio_received.lock().map_err(|e| e.to_string())?;

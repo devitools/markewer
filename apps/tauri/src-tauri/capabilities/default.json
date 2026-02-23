@@ -10,6 +10,7 @@
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
+    "core:window:allow-toggle-maximize",
     "cli:default",
     "dialog:default",
     "fs:default",

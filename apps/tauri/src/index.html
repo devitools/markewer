@@ -21,7 +21,7 @@
     </div>
     <div id="toolbar-actions">
       <div id="whisper-controls">
-        <button id="recording-btn" class="recording-idle" title="Voice-to-text (⌥Space)">
+        <button id="recording-btn" title="Open voice-to-text">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 11a3 3 0 0 0 3-3V4a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3z"/>
             <path d="M13 8a1 1 0 0 0-2 0 3 3 0 0 1-6 0 1 1 0 0 0-2 0 5 5 0 0 0 4 4.9V14H5.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H9v-1.1A5 5 0 0 0 13 8z"/>
@@ -127,8 +127,8 @@
       <p id="comment-context">Block: "<span id="comment-block-preview"></span>"</p>
       <textarea id="comment-input" aria-label="Comment text" placeholder="Your comment here..." rows="4"></textarea>
       <div class="modal-actions">
-        <button class="modal-btn" id="comment-cancel">Cancel</button>
-        <button class="modal-btn modal-btn-primary" id="comment-submit">Add Comment</button>
+        <button class="btn" id="comment-cancel">Cancel</button>
+        <button class="btn btn-primary" id="comment-submit">Add Comment</button>
       </div>
     </div>
   </div>
@@ -139,8 +139,8 @@
       <h3 id="review-modal-title">Review Prompt Generated</h3>
       <textarea id="review-output" aria-label="Generated review prompt" rows="20"></textarea>
       <div class="modal-actions">
-        <button class="modal-btn" id="review-close">Close</button>
-        <button class="modal-btn modal-btn-primary" id="review-copy">Copy to Clipboard</button>
+        <button class="btn" id="review-close">Close</button>
+        <button class="btn btn-primary" id="review-copy">Copy to Clipboard</button>
       </div>
     </div>
   </div>

@@ -18,7 +18,7 @@ impl WhisperTranscriber {
             .map_err(|e| format!("Failed to create whisper state: {}", e))?;
 
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        params.set_language(Some("auto"));
+        params.set_language(None);
         params.set_print_special(false);
         params.set_print_progress(false);
         params.set_print_realtime(false);

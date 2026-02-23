@@ -34,3 +34,8 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         ENABLE_HARDENED_RUNTIME: NO
         SWIFT_OBJC_BRIDGING_HEADER: ""
+      configs:
+        Debug:
+          BUNDLE_VERSION: dev
+        Release:
+          BUNDLE_VERSION: 0.2.0
