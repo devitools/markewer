@@ -933,8 +933,8 @@ document.getElementById("bottom-bar-add-comment").addEventListener("click", () =
   if (selectedBlocks.length === 1) {
     const clone = selectedBlocks[0].cloneNode(true);
     clone.querySelectorAll(".comment-badge").forEach(el => el.remove());
-    const text = clone.textContent.trim();
-    preview.textContent = text.length > 100 ? text.substring(0, 100) + "..." : text;
+    const text = clone.textContent.trim().replace(/\s+/g, ' ');
+    preview.textContent = text.length > 150 ? text.substring(0, 150) + "..." : text;
   } else {
     preview.textContent = `${selectedBlocks.length} blocks selected`;
   }
