@@ -249,7 +249,7 @@ impl AudioRecorder {
         }
 
         eprintln!("Captured {} samples, RMS: {:.4}, duration: {:.2}s",
-            raw.len(), rms, raw.len() as f32 / WHISPER_SAMPLE_RATE as f32
+            raw.len(), rms, raw.len() as f32 / self.device_sample_rate as f32
         );
 
         if self.device_sample_rate == WHISPER_SAMPLE_RATE {

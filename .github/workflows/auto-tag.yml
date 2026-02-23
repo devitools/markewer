@@ -18,10 +18,13 @@ jobs:
         id: check_changes
         run: |
           LATEST_TAG=$(git tag --sort=-v:refname | grep '^v' | head -1)
-          [ -z "$LATEST_TAG" ] && LATEST_TAG="v0.0.0"
 
           # Check if any app-related files changed since last tag
-          CHANGED_FILES=$(git diff --name-only "${LATEST_TAG}..HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+          if [ -z "$LATEST_TAG" ]; then
+            CHANGED_FILES=$(git ls-tree -r --name-only HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only "${LATEST_TAG}..HEAD")
+          fi
 
           if echo "$CHANGED_FILES" | grep -qE '^(apps/|shared/|scripts/set-version\.sh|\.github/workflows/(release|release-tauri|auto-tag)\.yml)'; then
             echo "apps_changed=true" >> "$GITHUB_OUTPUT"

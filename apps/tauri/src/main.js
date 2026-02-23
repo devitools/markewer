@@ -729,7 +729,12 @@ document.addEventListener("DOMContentLoaded", () => {
     thresholdInput.addEventListener("change", async (e) => {
       try {
         const settings = await invoke("get_whisper_settings");
-        settings.long_recording_threshold = parseInt(e.target.value);
+        const raw = parseInt(e.target.value, 10);
+        const value = Number.isFinite(raw) && raw > 0
+          ? raw
+          : (settings.long_recording_threshold || 60);
+        settings.long_recording_threshold = value;
+        e.target.value = value;
         await invoke("set_whisper_settings", { settings });
       } catch (err) {
         console.error("Failed to save threshold:", err);
@@ -763,9 +768,17 @@ async function openWhisperSettings() {
   try {
     const devices = await invoke("list_audio_devices");
     const deviceSelect = document.getElementById("device-select");
-    deviceSelect.innerHTML = '<option value="">System Default</option>' + devices.map(d =>
-      `<option value="${d.name}">${d.name}${d.is_default ? ' (Default)' : ''}</option>`
-    ).join('');
+    deviceSelect.innerHTML = "";
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "System Default";
+    deviceSelect.appendChild(defaultOpt);
+    devices.forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.name;
+      opt.textContent = `${d.name}${d.is_default ? " (Default)" : ""}`;
+      deviceSelect.appendChild(opt);
+    });
 
     const settings = await invoke("get_whisper_settings");
     if (settings.selected_device) {
