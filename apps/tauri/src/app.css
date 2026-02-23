@@ -8,7 +8,7 @@ html, body {
     display: flex;
     align-items: center;
     height: 52px;
-    padding: 0 16px;
+    padding: 8px 16px 0 16px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
     user-select: none;
