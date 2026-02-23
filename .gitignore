@@ -94,3 +94,6 @@ yarn-error.log*
 
 # Certificates
 .certificates/
+
+# Plan review comments
+*.comments.json

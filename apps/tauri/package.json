@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.2.0",
   "scripts": {
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "dev:server": "http-server src -p 1420 -c-1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2"
+    "@tauri-apps/cli": "^2",
+    "http-server": "^14.1.1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2"

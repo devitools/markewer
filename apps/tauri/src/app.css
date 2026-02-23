@@ -48,6 +48,26 @@ html.macos #toolbar {
     align-items: center;
 }
 
+/* Icon button base style */
+.icon-button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    width: 26px;
+    padding: 0;
+    transition: background 0.15s ease;
+}
+
+.icon-button:hover {
+    background: var(--code-bg);
+}
+
 #toolbar button {
     background: none;
     border: 1px solid var(--border);
@@ -66,14 +86,25 @@ html.macos #toolbar {
 }
 
 #btn-theme {
-    width: 30px;
+    width: 26px;
 }
 
-#btn-refresh {
-    padding: 0 10px;
+#btn-theme svg {
+    width: 14px;
+    height: 14px;
+}
+
+#btn-refresh svg {
+    width: 14px;
+    height: 14px;
+}
+
+#toolbar #btn-refresh {
+    padding: 4px 12px;
     gap: 5px;
     font-size: 12px;
     font-family: var(--font-body);
+    width: auto;
 }
 
 #split {
@@ -186,6 +217,10 @@ html.light {
     --blockquote-text: #57606a;
     --table-header-bg: #f6f8fa;
     --sidebar-bg: #f5f5f7;
+    --warning-bg: #f0ad4e;
+    --warning-text: #333;
+    --error-bg: #d9534f;
+    --error-text: #fff;
 }
 
 html.dark {
@@ -200,6 +235,10 @@ html.dark {
     --blockquote-text: #98989d;
     --table-header-bg: #2c2c2e;
     --sidebar-bg: #161618;
+    --warning-bg: #a67c34;
+    --warning-text: #f2f2f7;
+    --error-bg: #a94442;
+    --error-text: #f2f2f7;
 }
 
 html.light link[media*="dark"] { media: not all; }
@@ -290,3 +329,381 @@ html.dark link[media*="light"] { media: not all; }
     opacity: 0.9;
     background: var(--link);
 }
+
+/* Stale Comments Banner */
+
+.notification-banner {
+  position: fixed;
+  top: 52px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 200;
+}
+
+.notification-banner button {
+  padding: 3px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.notification-banner button:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+#stale-comments-banner {
+  background: var(--warning-bg, #f0ad4e);
+  color: var(--warning-text, #333);
+}
+
+#stale-comments-banner button {
+  color: var(--warning-text, #333);
+}
+
+#save-error-banner {
+  background: var(--error-bg, #d9534f);
+  color: var(--error-text, #fff);
+}
+
+#save-error-banner button {
+  color: var(--error-text, #fff);
+}
+
+/* Bottom Bar */
+
+#bottom-bar {
+  --bottom-bar-collapsed-height: 46px;
+  --bottom-bar-padding: 64px;
+  --bottom-bar-expanded-height: calc(100vh - 100px);
+
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-bar-expanded-height);
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--border);
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  transform: translateY(calc(100% - var(--bottom-bar-collapsed-height)));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+#bottom-bar.visible {
+  display: flex;
+}
+
+#bottom-bar.expanded {
+  transform: translateY(0);
+}
+
+#bottom-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+#bottom-bar-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#comment-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--text-muted);
+  color: var(--bg);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#bottom-bar-toggle {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#bottom-bar-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+#bottom-bar.expanded #bottom-bar-toggle {
+  transform: rotate(180deg);
+}
+
+#bottom-bar-add-comment {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--link);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: none;
+}
+
+#bottom-bar-add-comment:hover {
+  opacity: 0.9;
+}
+
+#bottom-bar-generate {
+  padding: 6px 16px;
+  font-size: 12px;
+  background: var(--link);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#bottom-bar-generate:hover {
+  opacity: 0.9;
+}
+
+#bottom-bar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bottom-bar-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 40px 20px;
+}
+
+.bottom-bar-item {
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.bottom-bar-item:hover {
+  border-color: var(--link);
+}
+
+.bottom-bar-item.highlight {
+  border-color: var(--link);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--link) 20%, transparent);
+}
+
+.bottom-bar-item.resolved {
+  opacity: 0.5;
+}
+
+.block-indicators {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.block-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.block-chip:hover {
+  background: var(--link);
+  color: white;
+  border-color: var(--link);
+}
+
+.comment-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+.comment-text {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.comment-actions button {
+  padding: 3px 8px;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.comment-actions button:hover {
+  background: var(--code-bg);
+}
+
+/* Commentable Blocks */
+
+.commentable-block {
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 4px;
+}
+
+.commentable-block:hover {
+  background: var(--code-bg);
+}
+
+.commentable-block.selected {
+  background: color-mix(in srgb, var(--link) 15%, transparent);
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+.commentable-block.selected::before {
+  content: "✓";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--link);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Comment Badges */
+
+.comment-badge {
+  position: absolute;
+  right: -30px;
+  top: 4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--link);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.comment-badge::after {
+  content: attr(data-count);
+}
+
+.comment-badge:hover {
+  transform: scale(1.1);
+}
+
+/* Comment Modal */
+
+#comment-modal textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+#comment-context {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  background: var(--code-bg);
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+/* Review Modal */
+
+.modal-large {
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-large h3,
+.modal-large .modal-actions {
+  flex-shrink: 0;
+}
+
+#review-output {
+  width: 100%;
+  flex: 1;
+  min-height: 200px;
+  max-height: 400px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 12px;
+  overflow-y: auto;
+}
+
+/* Adjust content area to not overlap bottom bar (applied dynamically via JS) */

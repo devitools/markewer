@@ -10,6 +10,11 @@
     "dialog:default",
     "fs:default",
     "fs:allow-read-text-file",
-    "updater:default"
+    "fs:allow-write-text-file",
+    "updater:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text",
+    "window-state:default"
   ]
 }

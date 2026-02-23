@@ -15,8 +15,8 @@
       <span id="toolbar-title"></span>
     </div>
     <div id="toolbar-actions">
-      <button id="btn-theme" title="Toggle theme (system / light / dark)">
-        <svg id="icon-theme" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <button id="btn-theme" class="icon-button" title="Toggle theme (system / light / dark)">
+        <svg id="icon-theme" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
         </svg>
       </button>
@@ -25,7 +25,6 @@
           <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/>
           <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
         </svg>
-        <span>Refresh</span>
       </button>
     </div>
   </div>
@@ -69,6 +68,58 @@
         <button class="modal-btn modal-btn-primary" id="cli-result-ok">OK</button>
       </div>
     </div>
+  </div>
+
+  <!-- Comment Modal -->
+  <div id="comment-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="comment-modal-title" style="display:none">
+    <div class="modal-box">
+      <h3 id="comment-modal-title">Add Comment</h3>
+      <p id="comment-context">Block: "<span id="comment-block-preview"></span>"</p>
+      <textarea id="comment-input" aria-label="Comment text" placeholder="Your comment here..." rows="4"></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn" id="comment-cancel">Cancel</button>
+        <button class="modal-btn modal-btn-primary" id="comment-submit">Add Comment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Prompt Modal -->
+  <div id="review-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="review-modal-title" style="display:none">
+    <div class="modal-box modal-large">
+      <h3 id="review-modal-title">Review Prompt Generated</h3>
+      <textarea id="review-output" aria-label="Generated review prompt" rows="20"></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn" id="review-close">Close</button>
+        <button class="modal-btn modal-btn-primary" id="review-copy">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stale Comments Banner -->
+  <div id="stale-comments-banner" class="notification-banner" role="status" aria-live="polite" aria-atomic="true" style="display:none">
+    <span>Comments may be outdated - the file has changed since comments were saved.</span>
+    <button id="stale-banner-dismiss">Dismiss</button>
+  </div>
+
+  <!-- Save Error Banner -->
+  <div id="save-error-banner" class="notification-banner" role="alert" aria-live="assertive" aria-atomic="true" style="display:none">
+    <span>Failed to save comments. Changes may be lost.</span>
+    <button id="save-error-dismiss">Dismiss</button>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div id="bottom-bar">
+    <div id="bottom-bar-header">
+      <span id="bottom-bar-title">COMMENTS <span id="comment-count">0</span></span>
+      <button id="bottom-bar-toggle" class="icon-button" aria-label="Expand/collapse comments panel" title="Expand/collapse">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="2,4 6,8 10,4"/>
+        </svg>
+      </button>
+      <button id="bottom-bar-add-comment" aria-label="Add comment to selected blocks">+ Add Comment</button>
+      <button id="bottom-bar-generate" aria-label="Generate review prompt from comments">Generate Review</button>
+    </div>
+    <div id="bottom-bar-list"></div>
   </div>
 
   <script type="module" src="main.js"></script>
