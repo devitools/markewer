@@ -9,14 +9,32 @@
     "frontendDist": "../src"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Arandu",
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "minWidth": 500,
-        "minHeight": 400
+        "minHeight": 400,
+        "skipTaskbar": true,
+        "visible": false
+      },
+      {
+        "label": "recording",
+        "title": "Recording",
+        "url": "recording.html",
+        "width": 600,
+        "height": 160,
+        "resizable": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "transparent": true,
+        "shadow": false
       }
     ]
   },
@@ -32,11 +50,12 @@
     ],
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0"]
+        "depends": ["libwebkit2gtk-4.1-0", "libasound2"]
       }
     },
     "macOS": {
-      "minimumSystemVersion": "13.0"
+      "minimumSystemVersion": "13.0",
+      "entitlements": "./Entitlements.plist"
     },
     "fileAssociations": [
       {

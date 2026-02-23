@@ -13,7 +13,7 @@ done
 if [ "$#" -eq 0 ]; then open "$APP"; else
     PATHS=(); for f in "$@"; do
         PATHS+=("$(cd "$(dirname "$f")" 2>/dev/null && echo "$PWD/$(basename "$f")")")
-    done; open -n "$APP" --args "${PATHS[@]}"
+    done; open "$APP" --args "${PATHS[@]}"
 fi
 "#;
 
@@ -27,7 +27,7 @@ pub struct InstallResult {
 }
 
 pub fn is_cli_installed() -> bool {
-    let home = dirs_next().unwrap_or_default();
+    let home = home_dir().unwrap_or_default();
     let paths = [
         PathBuf::from("/usr/local/bin/arandu"),
         home.join(".local/bin/arandu"),
@@ -77,7 +77,7 @@ pub fn install() -> InstallResult {
     }
 
     // Attempt 3: fallback to ~/.local/bin
-    let home = dirs_next().unwrap_or_default();
+    let home = home_dir().unwrap_or_default();
     let local_dir = home.join(".local/bin");
     let local_path = local_dir.join("arandu");
 
@@ -101,7 +101,7 @@ pub fn install() -> InstallResult {
     }
 }
 
-fn dirs_next() -> Option<PathBuf> {
+fn home_dir() -> Option<PathBuf> {
     std::env::var("HOME").ok().map(PathBuf::from)
 }
 

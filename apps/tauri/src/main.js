@@ -3,14 +3,35 @@ const { listen } = window.__TAURI__.event;
 const { open, confirm } = window.__TAURI__.dialog;
 const { getCurrentWindow } = window.__TAURI__.window;
 
+const currentWindow = getCurrentWindow();
+
+console.log("Registering onCloseRequested handler");
+
+currentWindow.onCloseRequested(async (event) => {
+  console.log("Close requested - preventing and hiding");
+  try {
+    event.preventDefault();
+    await currentWindow.hide();
+    console.log("Window hidden successfully");
+  } catch (error) {
+    console.error("Error in onCloseRequested:", error);
+  }
+});
+
 if (navigator.userAgent.includes("Mac")) {
   document.documentElement.classList.add("macos");
+} else {
+  // Update shortcut hint for non-macOS platforms
+  const shortcutHint = document.querySelector("#btn-open .shortcut-hint");
+  if (shortcutHint) {
+    shortcutHint.textContent = "Ctrl+O";
+  }
 }
 
 const THEMES = ["system", "light", "dark"];
 const THEME_ICONS = {
   system: '<path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>',
-  light: '<circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  light: '<circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
   dark: '<path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792 0 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278z"/>',
 };
 
@@ -102,6 +123,7 @@ async function loadFile(path) {
 
     document.body.classList.remove("no-file");
     document.getElementById("toolbar-title").textContent = path.split(/[/\\]/).pop();
+    document.getElementById("toolbar-info").style.display = "flex";
 
     await invoke("watch_file", { path });
     currentPath = path;
@@ -504,11 +526,33 @@ document.addEventListener("click", (e) => {
   }
 });
 
+
+function closeFile() {
+  currentPath = null;
+  document.body.classList.add("no-file");
+  document.getElementById("toolbar-title").textContent = "";
+  document.getElementById("toolbar-info").style.display = "none";
+  document.getElementById("content").innerHTML = "";
+  document.getElementById("outline-list").innerHTML = "";
+
+  // Clear comments state
+  selectedBlocks = [];
+  commentsData = { version: "1.0", file_hash: "", comments: [] };
+  hideBottomBar();
+  const bottomBar = document.getElementById("bottom-bar");
+  if (bottomBar) {
+    bottomBar.classList.remove("expanded");
+    bottomBar.style.display = "";
+  }
+  hideStaleCommentsBanner();
+}
+
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 document.getElementById("btn-refresh").addEventListener("click", () => {
   if (currentPath) loadFile(currentPath);
 });
 document.getElementById("btn-open").addEventListener("click", openFileDialog);
+document.getElementById("btn-close-file").addEventListener("click", closeFile);
 
 document.getElementById("toolbar").addEventListener("mousedown", (e) => {
   if (e.target.closest("button")) return;
@@ -536,6 +580,288 @@ sidebarHandle.addEventListener("mousedown", (e) => {
 
 listen("file-changed", () => {
   if (currentPath) loadFile(currentPath);
+});
+
+// Voice-to-text recording state
+
+const recordingBtn = document.getElementById("recording-btn");
+let isRecording = false;
+let currentShortcutLabel = "⌥Space";
+
+function setRecordingState(state) {
+  recordingBtn.className = "recording-" + state;
+  switch (state) {
+    case "active":
+      recordingBtn.title = "Recording... (" + currentShortcutLabel + " to stop)";
+      break;
+    case "processing":
+      recordingBtn.title = "Transcribing...";
+      break;
+    default:
+      recordingBtn.title = "Voice-to-text (" + currentShortcutLabel + ")";
+  }
+}
+
+listen("start-recording-shortcut", () => {
+  isRecording = true;
+  setRecordingState("active");
+});
+
+listen("start-recording-button", () => {
+  isRecording = true;
+  setRecordingState("active");
+});
+
+listen("stop-recording", () => {
+  isRecording = false;
+  setRecordingState("processing");
+});
+
+listen("transcription-complete", () => {
+  isRecording = false;
+  setRecordingState("idle");
+});
+
+listen("recording-error", (event) => {
+  console.error("Recording error:", event.payload);
+  isRecording = false;
+  setRecordingState("idle");
+});
+
+listen("transcription-error", (event) => {
+  console.error("Transcription error:", event.payload);
+  isRecording = false;
+  setRecordingState("idle");
+});
+
+// Whisper settings modal
+
+async function loadModelList() {
+  const models = await invoke("list_models");
+  const settings = await invoke("get_whisper_settings");
+  const list = document.getElementById("whisper-model-list");
+  list.innerHTML = "";
+
+  models.forEach((m) => {
+    const row = document.createElement("div");
+    row.className = "model-row";
+
+    const info = document.createElement("div");
+    info.className = "model-info";
+
+    const strong = document.createElement("strong");
+    strong.textContent = m.info.id;
+    info.appendChild(strong);
+
+    const desc = document.createElement("span");
+    desc.className = "model-desc";
+    desc.textContent = m.info.description;
+    info.appendChild(desc);
+
+    const actions = document.createElement("div");
+    actions.className = "model-actions";
+
+    if (m.downloaded) {
+      const isActive = settings.active_model === m.info.id;
+      const useBtn = document.createElement("button");
+      useBtn.className = "btn" + (isActive ? " btn-primary" : "");
+      useBtn.textContent = isActive ? "Active" : "Use";
+      useBtn.disabled = isActive;
+      useBtn.addEventListener("click", async () => {
+        await invoke("set_active_model", { modelId: m.info.id });
+        loadModelList();
+      });
+      actions.appendChild(useBtn);
+
+      if (!isActive) {
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn btn-danger";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", async () => {
+          await invoke("delete_model", { modelId: m.info.id });
+          loadModelList();
+        });
+        actions.appendChild(delBtn);
+      }
+    } else {
+      const dlBtn = document.createElement("button");
+      dlBtn.className = "btn btn-primary";
+      dlBtn.textContent = "Download";
+      dlBtn.addEventListener("click", async () => {
+        dlBtn.disabled = true;
+        dlBtn.textContent = "0%";
+        const unlisten = await listen("model-download-progress", (event) => {
+          const { downloaded, total } = event.payload;
+          const pct = Math.round((downloaded / total) * 100);
+          dlBtn.textContent = pct + "%";
+        });
+        try {
+          await invoke("download_model", { modelId: m.info.id });
+          unlisten();
+          loadModelList();
+        } catch (e) {
+          unlisten();
+          dlBtn.disabled = false;
+          dlBtn.textContent = "Retry";
+          console.error("Download failed:", e);
+        }
+      });
+      actions.appendChild(dlBtn);
+    }
+
+    row.appendChild(info);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("whisper-settings-close").addEventListener("click", () => {
+  hideModal("whisper-settings-modal");
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const deviceSelect = document.getElementById("device-select");
+  if (deviceSelect) {
+    deviceSelect.addEventListener("change", async (e) => {
+      try {
+        const deviceName = e.target.value || null;
+        await invoke("set_audio_device", { deviceName });
+      } catch (err) {
+        console.error("Failed to set device:", err);
+      }
+    });
+  }
+
+  const thresholdInput = document.getElementById("threshold-input");
+  if (thresholdInput) {
+    thresholdInput.addEventListener("change", async (e) => {
+      try {
+        const settings = await invoke("get_whisper_settings");
+        const raw = parseInt(e.target.value, 10);
+        const value = Number.isFinite(raw) && raw > 0
+          ? raw
+          : (settings.long_recording_threshold || 60);
+        settings.long_recording_threshold = value;
+        e.target.value = value;
+        await invoke("set_whisper_settings", { settings });
+      } catch (err) {
+        console.error("Failed to save threshold:", err);
+      }
+    });
+  }
+});
+
+recordingBtn.addEventListener("click", async () => {
+  const modelLoaded = await invoke("is_model_loaded");
+  if (!modelLoaded) {
+    openWhisperSettings();
+    return;
+  }
+
+  try {
+    await invoke("show_recording_window");
+    await invoke("start_recording_button_mode");
+  } catch (e) {
+    console.error("Failed to start recording:", e);
+  }
+});
+
+document.getElementById("whisper-settings-btn").addEventListener("click", () => {
+  openWhisperSettings();
+});
+
+async function openWhisperSettings() {
+  await loadModelList();
+
+  try {
+    const devices = await invoke("list_audio_devices");
+    const deviceSelect = document.getElementById("device-select");
+    deviceSelect.innerHTML = "";
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "System Default";
+    deviceSelect.appendChild(defaultOpt);
+    devices.forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.name;
+      opt.textContent = `${d.name}${d.is_default ? " (Default)" : ""}`;
+      deviceSelect.appendChild(opt);
+    });
+
+    const settings = await invoke("get_whisper_settings");
+    if (settings.selected_device) {
+      deviceSelect.value = settings.selected_device;
+    }
+  } catch (e) {
+    console.error("Failed to load audio devices:", e);
+  }
+
+  const settings = await invoke("get_whisper_settings");
+  document.getElementById("shortcut-input").value = settings.shortcut || "Alt+Space";
+  document.getElementById("threshold-input").value = settings.long_recording_threshold || 60;
+  showModal("whisper-settings-modal");
+}
+
+// Shortcut configuration
+const shortcutInput = document.getElementById("shortcut-input");
+const shortcutRecordBtn = document.getElementById("shortcut-record-btn");
+let recordingShortcut = false;
+
+shortcutRecordBtn.addEventListener("click", () => {
+  if (recordingShortcut) return;
+  recordingShortcut = true;
+  shortcutInput.value = "Press keys...";
+  shortcutInput.classList.add("recording-shortcut");
+  shortcutRecordBtn.textContent = "Listening...";
+  shortcutRecordBtn.disabled = true;
+  setTimeout(() => shortcutInput.focus(), 0);
+});
+
+shortcutInput.addEventListener("keydown", async (e) => {
+  if (!recordingShortcut) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (e.key === "Escape") {
+    recordingShortcut = false;
+    shortcutInput.classList.remove("recording-shortcut");
+    shortcutRecordBtn.textContent = "Change";
+    shortcutRecordBtn.disabled = false;
+    const settings = await invoke("get_whisper_settings");
+    shortcutInput.value = settings.shortcut || "Alt+Space";
+    return;
+  }
+
+  if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
+
+  const parts = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.metaKey) parts.push("Super");
+
+  let key = e.key;
+  if (key === " ") key = "Space";
+  else if (key.length === 1) key = key.toUpperCase();
+  parts.push(key);
+
+  const shortcut = parts.join("+");
+  shortcutInput.value = shortcut;
+
+  try {
+    await invoke("set_shortcut", { shortcut });
+    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replaceAll("+", "");
+    setRecordingState("idle");
+  } catch (err) {
+    shortcutInput.value = "Invalid — try again";
+    setTimeout(() => { shortcutInput.value = "Press keys..."; }, 1500);
+    return;
+  }
+
+  recordingShortcut = false;
+  shortcutInput.classList.remove("recording-shortcut");
+  shortcutRecordBtn.textContent = "Change";
+  shortcutRecordBtn.disabled = false;
 });
 
 listen("open-file", (event) => {
@@ -607,6 +933,11 @@ applyTheme(currentTheme);
 
 if (!currentPath) {
   document.body.classList.add("no-file");
+  document.getElementById("toolbar-title").textContent = "";
+  document.getElementById("toolbar-info").style.display = "none";
+} else {
+  document.getElementById("toolbar-title").textContent = currentPath.split(/[/\\]/).pop();
+  document.getElementById("toolbar-info").style.display = "flex";
 }
 
 // Bottom bar and comment event listeners

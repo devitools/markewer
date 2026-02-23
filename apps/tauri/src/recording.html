@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="components.css">
+  <style>
+    :root {
+      --bg: #1c1c1e;
+      --text: #e8e8ed;
+      --text-secondary: #98989d;
+      --border: #38383a;
+      --bg-hover: #2c2c2e;
+      --success: #34c759;
+      --warning: #ff9500;
+      --error: #ff3b30;
+    }
+
+    html.light {
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #666666;
+      --border: #e1e4e8;
+      --bg-hover: #f6f8fa;
+      --success: #28a745;
+      --warning: #ff9500;
+      --error: #ff3b30;
+    }
+
+    html.dark {
+      --bg: #1c1c1e;
+      --text: #e8e8ed;
+      --text-secondary: #98989d;
+      --border: #38383a;
+      --bg-hover: #2c2c2e;
+      --success: #34c759;
+      --warning: #ff9500;
+      --error: #ff3b30;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #ffffff;
+        --text: #1a1a1a;
+        --text-secondary: #666666;
+        --border: #e1e4e8;
+        --bg-hover: #f6f8fa;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      padding: 18px 18px 22px 18px;
+    }
+
+    #main-container {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      gap: 14px;
+      border: 0.5px solid rgba(0, 0, 0, 0.08);
+      box-shadow:
+        0 4px 16px -2px rgba(0, 0, 0, 0.12),
+        0 2px 6px -1px rgba(0, 0, 0, 0.06),
+        0 0 0 0.5px rgba(0, 0, 0, 0.04);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      backdrop-filter: blur(40px) saturate(180%);
+    }
+
+    .drag-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .drag-handle {
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    #content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 16px 22px;
+      gap: 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .state {
+      width: 100%;
+      display: none;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .state.active {
+      display: flex;
+    }
+
+    .icon-left {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pulse {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--error);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .success-indicator {
+      width: 32px;
+      height: 32px;
+      background: var(--success);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .error-indicator {
+      width: 32px;
+      height: 32px;
+      background: var(--error);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .content-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .timer {
+      font-size: 20px;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      min-width: 50px;
+    }
+
+    .status-text {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .text-preview {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Usa o sistema de botões global do app.css */
+    /* Apenas ajustes específicos se necessário */
+
+    .shortcut {
+      font-size: 11px;
+      opacity: 0.6;
+      font-weight: 400;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--warning);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.15);
+      }
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(1);
+        opacity: 0.3;
+      }
+      70% {
+        transform: scale(1.8);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="main-container">
+    <div class="drag-area">
+      <div class="drag-handle" data-tauri-drag-region></div>
+    </div>
+    <div id="content">
+      <!-- Estado: Recording -->
+    <div id="recording-state" class="state">
+      <div class="icon-left">
+        <div class="pulse"></div>
+      </div>
+      <div class="content-center">
+        <div class="timer" id="timer">0:00</div>
+        <div class="status-text" id="recording-status">Recording</div>
+      </div>
+      <div class="controls" id="manual-controls" style="display:none">
+        <button class="btn btn-danger" id="btn-stop">
+          Stop <span class="shortcut">⌥ Space</span>
+        </button>
+        <button class="btn" id="btn-cancel">
+          Cancel <span class="shortcut">esc</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado: Transcribing -->
+    <div id="transcribing-state" class="state">
+      <div class="icon-left">
+        <div class="spinner"></div>
+      </div>
+      <div class="content-center">
+        <div class="status-text">Transcribing...</div>
+      </div>
+      <div class="controls">
+        <div class="text-preview" id="duration-info">Recorded: 0:00</div>
+      </div>
+    </div>
+
+    <!-- Estado: Complete -->
+    <div id="complete-state" class="state">
+      <div class="icon-left">
+        <div class="success-indicator">✓</div>
+      </div>
+      <div class="content-center">
+        <div class="status-text">Complete</div>
+        <div class="text-preview" id="preview-text"></div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="btn-close-complete">Copy & Close</button>
+      </div>
+    </div>
+
+    <!-- Estado: Error -->
+    <div id="error-state" class="state">
+      <div class="icon-left">
+        <div class="error-indicator">✕</div>
+      </div>
+      <div class="content-center">
+        <div class="status-text">Error</div>
+        <div class="text-preview" id="error-message"></div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-secondary" id="btn-retry">Retry</button>
+        <button class="btn" id="btn-close-error">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const { listen } = window.__TAURI__.event;
+    const { getCurrentWindow } = window.__TAURI__.window;
+    const { invoke } = window.__TAURI__.core;
+
+    const currentWindow = getCurrentWindow();
+
+    let recordingMode = null;
+    let timerInterval = null;
+    let recordingStartTime = null;
+    let longRecordingThreshold = 60;
+    let lastTranscribedText = '';
+
+    async function loadSettings() {
+      try {
+        const settings = await invoke("get_whisper_settings");
+        longRecordingThreshold = settings.long_recording_threshold || 60;
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      }
+    }
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      document.getElementById('timer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      const statusText = document.getElementById('recording-status');
+      if (elapsed >= longRecordingThreshold) {
+        statusText.textContent = 'Long Recording';
+        statusText.style.color = 'var(--warning)';
+      } else {
+        statusText.textContent = 'Recording';
+        statusText.style.color = '';
+      }
+    }
+
+    function startRecording(mode) {
+      recordingMode = mode;
+      recordingStartTime = Date.now();
+
+      showState('recording');
+
+      const manualControls = document.getElementById('manual-controls');
+      manualControls.style.display = 'flex';
+
+      timerInterval = setInterval(updateTimer, 100);
+    }
+
+    function stopRecording() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      showState('transcribing');
+
+      const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      document.getElementById('duration-info').textContent =
+        `Recorded: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function showComplete(text) {
+      lastTranscribedText = text;
+      showState('complete');
+
+      const preview = text.length > 60 ? text.substring(0, 60) + '...' : text;
+      document.getElementById('preview-text').textContent = preview;
+    }
+
+    function showError(errorMessage) {
+      showState('error');
+      const shortMsg = errorMessage.length > 50 ? errorMessage.substring(0, 50) + '...' : errorMessage;
+      document.getElementById('error-message').textContent = shortMsg;
+    }
+
+    function resetRecordingUi() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      recordingStartTime = null;
+      recordingMode = null;
+      const manualControls = document.getElementById('manual-controls');
+      if (manualControls) manualControls.style.display = 'none';
+    }
+
+    function showState(stateName) {
+      document.querySelectorAll('.state').forEach(el => {
+        el.classList.remove('active');
+      });
+      const targetState = document.getElementById(`${stateName}-state`);
+      if (targetState) {
+        targetState.classList.add('active');
+      }
+    }
+
+    currentWindow.onCloseRequested(async (event) => {
+      event.preventDefault();
+      await currentWindow.hide();
+    });
+
+    listen('start-recording-shortcut', () => {
+      currentWindow.show();
+      startRecording('shortcut');
+    });
+
+    listen('start-recording-button', () => {
+      currentWindow.show();
+      startRecording('button');
+    });
+
+    listen('stop-recording', async () => {
+      stopRecording();
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      try {
+        await invoke('stop_and_transcribe');
+      } catch (error) {
+        console.error("Failed to stop and transcribe:", error);
+      }
+    });
+
+    listen('transcription-complete', async (event) => {
+      showComplete(event.payload);
+
+      if (recordingMode === 'shortcut') {
+        try {
+          await invoke('write_clipboard', { text: event.payload });
+        } catch (error) {
+          console.error("Failed to copy to clipboard:", error);
+        }
+
+        setTimeout(() => {
+          currentWindow.hide();
+        }, 500);
+      }
+    });
+
+    listen('transcription-error', (event) => {
+      showError(event.payload);
+    });
+
+    listen('recording-error', (event) => {
+      resetRecordingUi();
+      showError(event.payload);
+    });
+
+    document.getElementById('btn-stop').addEventListener('click', async () => {
+      stopRecording();
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      try {
+        await invoke('stop_and_transcribe');
+      } catch (error) {
+        console.error("Failed to stop and transcribe:", error);
+      }
+    });
+
+    document.getElementById('btn-cancel').addEventListener('click', async () => {
+      try {
+        resetRecordingUi();
+        await invoke('cancel_recording');
+        currentWindow.hide();
+      } catch (error) {
+        console.error("Failed to cancel recording:", error);
+        resetRecordingUi();
+        currentWindow.hide();
+      }
+    });
+
+    document.getElementById('btn-close-complete').addEventListener('click', async () => {
+      if (lastTranscribedText) {
+        try {
+          await invoke('write_clipboard', { text: lastTranscribedText });
+        } catch (error) {
+          console.error("Failed to copy to clipboard:", error);
+        }
+      }
+      currentWindow.hide();
+    });
+
+    document.getElementById('btn-close-error').addEventListener('click', () => {
+      currentWindow.hide();
+    });
+
+    document.getElementById('btn-retry').addEventListener('click', async () => {
+      try {
+        await invoke('start_recording');
+        startRecording('button');
+      } catch (error) {
+        console.error("Failed to retry recording:", error);
+        showError(error.toString());
+      }
+    });
+
+    document.addEventListener('keydown', async (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        try {
+          resetRecordingUi();
+          await invoke('cancel_recording');
+          currentWindow.hide();
+        } catch (error) {
+          console.error("Failed to cancel recording:", error);
+          resetRecordingUi();
+          currentWindow.hide();
+        }
+      }
+    });
+
+    loadSettings();
+
+    function applyTheme() {
+      const theme = localStorage.getItem("arandu-theme") || "system";
+      document.documentElement.classList.remove("light", "dark");
+      if (theme !== "system") {
+        document.documentElement.classList.add(theme);
+      }
+    }
+
+    applyTheme();
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'arandu-theme') {
+        applyTheme();
+      }
+    });
+
+    const checkTheme = setInterval(applyTheme, 500);
+    setTimeout(() => clearInterval(checkTheme), 5000);
+  </script>
+  </div>
+</body>
+</html>
