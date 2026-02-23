@@ -61,7 +61,22 @@ fn render_markdown(content: String) -> String {
 
 #[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
-    std::fs::read_to_string(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
+    eprintln!("[DEBUG] read_file called with path: {:?}", path);
+
+    // Try to canonicalize the path to handle relative paths correctly
+    let resolved_path = match std::fs::canonicalize(&path) {
+        Ok(p) => {
+            eprintln!("[DEBUG] Canonicalized to: {:?}", p);
+            p
+        }
+        Err(e) => {
+            eprintln!("[DEBUG] Canonicalize failed ({}), trying as-is", e);
+            PathBuf::from(&path)
+        }
+    };
+
+    std::fs::read_to_string(&resolved_path)
+        .map_err(|e| format!("Failed to read {}: {}", resolved_path.display(), e))
 }
 
 #[tauri::command]
@@ -334,7 +349,8 @@ fn setup_macos_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    // Separate builder to allow conditional state management (e.g., for IPC socket in feat/unix-socket-ipc branch)
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -347,7 +363,7 @@ pub fn run() {
                 .build()
         )
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            eprintln!("Second instance detected: {:?}", args);
+            eprintln!("[DEBUG] Second instance detected: {:?}", args);
 
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
@@ -357,10 +373,14 @@ pub fn run() {
 
             if args.len() > 1 {
                 let file_path = &args[1];
+                eprintln!("[DEBUG] Processing file argument: {:?}", file_path);
                 if !file_path.is_empty() && !file_path.starts_with('-') {
                     if let Ok(abs_path) = std::fs::canonicalize(file_path) {
                         let path_str = abs_path.to_string_lossy().to_string();
+                        eprintln!("[DEBUG] Emitting open-file with: {:?}", path_str);
                         let _ = app.emit("open-file", &path_str);
+                    } else {
+                        eprintln!("[DEBUG] Failed to canonicalize path: {:?}", file_path);
                     }
                 }
             }
@@ -370,12 +390,28 @@ pub fn run() {
         .manage(ExplicitQuit(Arc::new(AtomicBool::new(false))))
         .manage(IsRecording(Arc::new(AtomicBool::new(false))))
         .manage(whisper::commands::RecorderState(Mutex::new(None)))
-        .manage(whisper::commands::TranscriberState(Mutex::new(None)))
+        .manage(whisper::commands::TranscriberState(Mutex::new(None)));
+
+    // Conditional state management (placeholder for feat/unix-socket-ipc branch merge)
+    // When merging with feat/unix-socket-ipc, add:
+    // #[cfg(unix)]
+    // let builder = builder.manage(ipc::SocketState(Mutex::new(None)));
+
+    builder
         .setup(|app| {
             #[cfg(target_os = "macos")]
             setup_macos_menu(app)?;
 
             tray::setup(app)?;
+
+            // IPC socket setup (placeholder for feat/unix-socket-ipc branch merge)
+            // When merging with feat/unix-socket-ipc, add:
+            // #[cfg(unix)]
+            // {
+            //     if let Err(e) = ipc::setup(app) {
+            //         eprintln!("Failed to setup IPC socket: {}", e);
+            //     }
+            // }
 
             let shortcut_str = if let Ok(app_data_dir) = app.path().app_data_dir() {
                 let settings = whisper::model_manager::load_settings(&app_data_dir);
@@ -424,8 +460,13 @@ pub fn run() {
             if let Some(matches) = matches {
                 if let Some(arg) = matches.args.get("file") {
                     if let serde_json::Value::String(path) = &arg.value {
+                        eprintln!("[DEBUG] CLI argument received: {:?}", path);
                         if !path.is_empty() {
-                            let abs = std::fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path));
+                            let abs = std::fs::canonicalize(path).unwrap_or_else(|e| {
+                                eprintln!("[DEBUG] Canonicalize failed ({}), using as-is", e);
+                                PathBuf::from(path)
+                            });
+                            eprintln!("[DEBUG] Setting initial file to: {:?}", abs);
                             let initial = app.state::<InitialFile>();
                             if let Ok(mut guard) = initial.0.lock() {
                                 *guard = Some(abs.to_string_lossy().into());
@@ -475,6 +516,13 @@ pub fn run() {
             if let tauri::RunEvent::ExitRequested { api, .. } = &event {
                 let quit_flag = app_handle.state::<ExplicitQuit>();
                 if quit_flag.0.load(Ordering::Relaxed) {
+                    // IPC socket cleanup (placeholder for feat/unix-socket-ipc branch merge)
+                    // When merging with feat/unix-socket-ipc, add:
+                    // #[cfg(unix)]
+                    // {
+                    //     let socket_state = app_handle.state::<ipc::SocketState>();
+                    //     ipc::cleanup(socket_state);
+                    // }
                     return;
                 }
                 api.prevent_exit();
@@ -487,7 +535,11 @@ pub fn run() {
             if let tauri::RunEvent::Opened { urls } = event {
                 for url in urls {
                     if let Ok(path) = url.to_file_path() {
-                        let path_str = path.to_string_lossy().to_string();
+                        eprintln!("[DEBUG] Opened event received with path: {:?}", path);
+                        // Canonicalize to ensure absolute path
+                        let abs_path = std::fs::canonicalize(&path).unwrap_or(path);
+                        let path_str = abs_path.to_string_lossy().to_string();
+                        eprintln!("[DEBUG] Emitting open-file with: {:?}", path_str);
                         let initial = app_handle.state::<InitialFile>();
                         if let Ok(mut guard) = initial.0.lock() {
                             *guard = Some(path_str.clone());

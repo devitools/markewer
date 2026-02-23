@@ -72,6 +72,7 @@ function toggleTheme() {
 }
 
 async function loadFile(path) {
+  console.log("[DEBUG] loadFile called with:", path);
   try {
     const content = await invoke("read_file", { path });
     const html = await invoke("render_markdown", { content });
@@ -122,7 +123,8 @@ async function loadFile(path) {
     populateOutline(headings);
 
     document.body.classList.remove("no-file");
-    document.getElementById("toolbar-title").textContent = path.split(/[/\\]/).pop();
+    document.getElementById("toolbar-title").textContent = path;
+    document.getElementById("toolbar-title").title = path; // Full path on hover
     document.getElementById("toolbar-info").style.display = "flex";
 
     await invoke("watch_file", { path });
@@ -927,6 +929,7 @@ shortcutInput.addEventListener("keydown", async (e) => {
 });
 
 listen("open-file", (event) => {
+  console.log("[DEBUG] open-file event received:", event.payload);
   loadFile(event.payload);
 });
 
@@ -995,7 +998,8 @@ if (!currentPath) {
   document.getElementById("toolbar-title").textContent = "";
   document.getElementById("toolbar-info").style.display = "none";
 } else {
-  document.getElementById("toolbar-title").textContent = currentPath.split(/[/\\]/).pop();
+  document.getElementById("toolbar-title").textContent = currentPath;
+  document.getElementById("toolbar-title").title = currentPath;
   document.getElementById("toolbar-info").style.display = "flex";
 }
 
