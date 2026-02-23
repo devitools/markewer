@@ -83,23 +83,38 @@ Record audio and transcribe to text using OpenAI Whisper models (runs locally, n
 - [Rust](https://www.rust-lang.org/tools/install) (stable)
 - [Node.js](https://nodejs.org) 20+
 
-### Run locally
+### Quick Start
 
 ```bash
 cd apps/tauri
-npm install
-npx tauri dev
+npm install        # install dependencies
+make dev           # run in development mode
 ```
 
-### Production build
+### Build Commands
+
+**Using Makefile (recommended):**
 
 ```bash
 cd apps/tauri
-npx tauri build
+make dev           # run in development mode (hot reload)
+make build         # production build
+make build-dev     # local dev build with git hash (e.g. Arandu_0.0.0-abc1234.dmg)
+make install       # install app to ~/Applications + CLI to /usr/local/bin
+make clean         # remove build artifacts
+make help          # show all available targets
 ```
 
-### Set version across all configs
+**Using npm/npx directly:**
 
 ```bash
-scripts/set-version.sh 0.3.0
+cd apps/tauri
+npx tauri dev      # development mode
+npx tauri build    # production build
+```
+
+### Version Management
+
+```bash
+scripts/set-version.sh 0.3.0   # update version across all config files
 ```
