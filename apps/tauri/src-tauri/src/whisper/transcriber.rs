@@ -28,16 +28,13 @@ impl WhisperTranscriber {
             .full(params, audio)
             .map_err(|e| format!("Transcription failed: {}", e))?;
 
-        let num_segments = state
-            .full_n_segments()
-            .map_err(|e| format!("Failed to get segments: {}", e))?;
+        let num_segments = state.full_n_segments();
 
         let mut text = String::new();
         for i in 0..num_segments {
-            let segment = state
-                .full_get_segment_text(i)
-                .map_err(|e| format!("Failed to get segment {i}: {e}"))?;
-            text.push_str(&segment);
+            if let Some(segment) = state.get_segment(i) {
+                text.push_str(&format!("{}", segment));
+            }
         }
         Ok(text.trim().to_string())
     }
