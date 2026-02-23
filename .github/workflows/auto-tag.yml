@@ -14,8 +14,25 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
 
+      - name: Check if apps changed
+        id: check_changes
+        run: |
+          LATEST_TAG=$(git tag --sort=-v:refname | grep '^v' | head -1)
+          [ -z "$LATEST_TAG" ] && LATEST_TAG="v0.0.0"
+
+          # Check if any app-related files changed since last tag
+          CHANGED_FILES=$(git diff --name-only "${LATEST_TAG}..HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+
+          if echo "$CHANGED_FILES" | grep -qE '^(apps/|shared/|scripts/set-version\.sh|\.github/workflows/(release|auto-tag)\.yml)'; then
+            echo "apps_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "apps_changed=false" >> "$GITHUB_OUTPUT"
+            echo "Only documentation/website changes detected, skipping release"
+          fi
+
       - name: Calculate next version
         id: version
+        if: steps.check_changes.outputs.apps_changed == 'true'
         run: |
           LATEST_TAG=$(git tag --sort=-v:refname | grep '^v' | head -1)
           [ -z "$LATEST_TAG" ] && LATEST_TAG="v0.0.0"
@@ -64,7 +81,7 @@ jobs:
           echo "Bump: $BUMP ($LATEST_TAG -> v$NEXT)"
 
       - name: Create and push tag
-        if: steps.version.outputs.skip != 'true'
+        if: steps.check_changes.outputs.apps_changed == 'true' && steps.version.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
