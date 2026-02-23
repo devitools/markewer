@@ -814,6 +814,7 @@ shortcutRecordBtn.addEventListener("click", () => {
   shortcutInput.classList.add("recording-shortcut");
   shortcutRecordBtn.textContent = "Listening...";
   shortcutRecordBtn.disabled = true;
+  setTimeout(() => shortcutInput.focus(), 0);
 });
 
 shortcutInput.addEventListener("keydown", async (e) => {
