@@ -20,12 +20,18 @@ currentWindow.onCloseRequested(async (event) => {
 
 if (navigator.userAgent.includes("Mac")) {
   document.documentElement.classList.add("macos");
+} else {
+  // Update shortcut hint for non-macOS platforms
+  const shortcutHint = document.querySelector("#btn-open .shortcut-hint");
+  if (shortcutHint) {
+    shortcutHint.textContent = "Ctrl+O";
+  }
 }
 
 const THEMES = ["system", "light", "dark"];
 const THEME_ICONS = {
   system: '<path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>',
-  light: '<circle cx="8" cy="8" r="3"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42"/>',
+  light: '<circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 0v2m0 12v2m8-8h-2M2 8H0m13.66-5.66L12.24 3.76M3.76 12.24l-1.42 1.42m0-11.32 1.42 1.42m8.48 8.48 1.42 1.42" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
   dark: '<path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792 0 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278z"/>',
 };
 
@@ -86,6 +92,7 @@ async function loadFile(path) {
 
     document.body.classList.remove("no-file");
     document.getElementById("toolbar-title").textContent = path.split(/[/\\]/).pop();
+    document.getElementById("toolbar-info").style.display = "flex";
 
     await invoke("watch_file", { path });
     currentPath = path;
@@ -117,11 +124,21 @@ async function openFileDialog() {
   if (path) loadFile(path);
 }
 
+function closeFile() {
+  currentPath = null;
+  document.body.classList.add("no-file");
+  document.getElementById("toolbar-title").textContent = "";
+  document.getElementById("toolbar-info").style.display = "none";
+  document.getElementById("content").innerHTML = "";
+  document.getElementById("outline-list").innerHTML = "";
+}
+
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 document.getElementById("btn-refresh").addEventListener("click", () => {
   if (currentPath) loadFile(currentPath);
 });
 document.getElementById("btn-open").addEventListener("click", openFileDialog);
+document.getElementById("btn-close-file").addEventListener("click", closeFile);
 
 document.getElementById("toolbar").addEventListener("mousedown", (e) => {
   if (e.target.closest("button")) return;
@@ -171,32 +188,29 @@ function setRecordingState(state) {
   }
 }
 
-listen("start-recording", () => {
+listen("start-recording-shortcut", () => {
   isRecording = true;
-  setRecordingState("active");
+});
+
+listen("start-recording-button", () => {
+  isRecording = true;
 });
 
 listen("stop-recording", () => {
-  if (isRecording) {
-    isRecording = false;
-    setRecordingState("processing");
-  }
+  isRecording = false;
 });
 
 listen("transcription-complete", () => {
-  setRecordingState("idle");
   isRecording = false;
 });
 
 listen("recording-error", (event) => {
   console.error("Recording error:", event.payload);
   isRecording = false;
-  setRecordingState("idle");
 });
 
 listen("transcription-error", (event) => {
   console.error("Transcription error:", event.payload);
-  setRecordingState("idle");
   isRecording = false;
 });
 
@@ -222,7 +236,7 @@ async function loadModelList() {
     if (m.downloaded) {
       const isActive = settings.active_model === m.info.id;
       const useBtn = document.createElement("button");
-      useBtn.className = "modal-btn" + (isActive ? " modal-btn-primary" : "");
+      useBtn.className = "btn" + (isActive ? " btn-primary" : "");
       useBtn.textContent = isActive ? "Active" : "Use";
       useBtn.disabled = isActive;
       useBtn.addEventListener("click", async () => {
@@ -233,7 +247,7 @@ async function loadModelList() {
 
       if (!isActive) {
         const delBtn = document.createElement("button");
-        delBtn.className = "modal-btn model-btn-danger";
+        delBtn.className = "btn btn-danger";
         delBtn.textContent = "Delete";
         delBtn.addEventListener("click", async () => {
           await invoke("delete_model", { modelId: m.info.id });
@@ -243,7 +257,7 @@ async function loadModelList() {
       }
     } else {
       const dlBtn = document.createElement("button");
-      dlBtn.className = "modal-btn modal-btn-primary";
+      dlBtn.className = "btn btn-primary";
       dlBtn.textContent = "Download";
       dlBtn.addEventListener("click", async () => {
         dlBtn.disabled = true;
@@ -289,37 +303,33 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  const thresholdInput = document.getElementById("threshold-input");
+  if (thresholdInput) {
+    thresholdInput.addEventListener("change", async (e) => {
+      try {
+        const settings = await invoke("get_whisper_settings");
+        settings.long_recording_threshold = parseInt(e.target.value);
+        await invoke("set_whisper_settings", { settings });
+      } catch (err) {
+        console.error("Failed to save threshold:", err);
+      }
+    });
+  }
 });
 
 recordingBtn.addEventListener("click", async () => {
-  if (!isRecording) {
-    const modelLoaded = await invoke("is_model_loaded");
-    if (!modelLoaded) {
-      openWhisperSettings();
-      return;
-    }
-    isRecording = true;
-    setRecordingState("active");
-    try {
-      await invoke("start_recording");
-    } catch (e) {
-      console.error("Failed to start recording:", e);
-      isRecording = false;
-      setRecordingState("idle");
-    }
-  } else {
-    isRecording = false;
-    setRecordingState("processing");
-    try {
-      const text = await invoke("stop_and_transcribe");
-      if (text) {
-        await window.__TAURI__.clipboardManager.writeText(text);
-      }
-      setRecordingState("idle");
-    } catch (e) {
-      console.error("Transcription failed:", e);
-      setRecordingState("idle");
-    }
+  const modelLoaded = await invoke("is_model_loaded");
+  if (!modelLoaded) {
+    openWhisperSettings();
+    return;
+  }
+
+  try {
+    await invoke("show_recording_window");
+    await invoke("start_recording_button_mode");
+  } catch (e) {
+    console.error("Failed to start recording:", e);
   }
 });
 
@@ -347,6 +357,7 @@ async function openWhisperSettings() {
 
   const settings = await invoke("get_whisper_settings");
   document.getElementById("shortcut-input").value = settings.shortcut || "Alt+Space";
+  document.getElementById("threshold-input").value = settings.long_recording_threshold || 60;
   showModal("whisper-settings-modal");
 }
 
@@ -477,4 +488,9 @@ applyTheme(currentTheme);
 
 if (!currentPath) {
   document.body.classList.add("no-file");
+  document.getElementById("toolbar-title").textContent = "";
+  document.getElementById("toolbar-info").style.display = "none";
+} else {
+  document.getElementById("toolbar-title").textContent = currentPath.split(/[/\\]/).pop();
+  document.getElementById("toolbar-info").style.display = "flex";
 }

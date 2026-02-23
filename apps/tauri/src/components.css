@@ -1,0 +1,121 @@
+/* ============================================
+   Arandu - Component Styles
+   Componentes reutilizáveis compartilhados entre páginas
+   ============================================ */
+
+/* ============================================
+   CSS Variables (required for components)
+   ============================================ */
+
+:root {
+    /* Dark mode (default) */
+    --bg: #1c1c1e;
+    --text: #e8e8ed;
+    --text-secondary: #98989d;
+    --border: #38383a;
+    --bg-hover: #2c2c2e;
+    --code-bg: #2c2c2e;
+    --link: #5b8ef4;
+}
+
+html.light {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --text-secondary: #666666;
+    --border: #e1e4e8;
+    --bg-hover: #f6f8fa;
+    --code-bg: #f6f8fa;
+    --link: #0969da;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #ffffff;
+        --text: #1a1a1a;
+        --text-secondary: #666666;
+        --border: #e1e4e8;
+        --bg-hover: #f6f8fa;
+        --code-bg: #f6f8fa;
+        --link: #0969da;
+    }
+}
+
+/* ============================================
+   Button System
+   ============================================ */
+
+/* Base button styles */
+.btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--link);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: normal;
+    font-family: inherit;
+    transition: background 0.15s ease;
+    outline: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn:hover {
+    background: var(--code-bg);
+}
+
+/* Primary button (azul sólido) */
+.btn-primary {
+    background: #5b8ef4;
+    color: white;
+    border: none;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: #4a7de3;
+}
+
+/* Danger/Negative button (vermelho sólido) */
+.btn-danger {
+    background: #ff3b30;
+    color: white;
+    border: none;
+    font-weight: 500;
+}
+
+.btn-danger:hover {
+    background: #e62b20;
+}
+
+/* Secondary button (outline/ghost) */
+.btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.shortcut {
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+.shortcut-hint {
+    font-size: 12px;
+    opacity: 0.5;
+    font-weight: 400;
+    margin-left: 4px;
+}

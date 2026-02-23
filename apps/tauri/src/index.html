@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="components.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="highlight-light.min.css" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="highlight-dark.min.css" media="(prefers-color-scheme: dark)">
@@ -10,9 +11,13 @@
 </head>
 <body>
   <div id="toolbar">
-    <div id="toolbar-info">
-      <span id="toolbar-app">Arandu</span>
+    <div id="toolbar-info" style="display:none">
       <span id="toolbar-title"></span>
+      <button id="btn-close-file" title="Close file">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+        </svg>
+      </button>
     </div>
     <div id="toolbar-actions">
       <div id="whisper-controls">
@@ -23,14 +28,14 @@
           </svg>
         </button>
         <button id="whisper-settings-btn" title="Voice-to-text settings">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
             <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
           </svg>
         </button>
       </div>
       <button id="btn-theme" title="Toggle theme (system / light / dark)">
-        <svg id="icon-theme" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <svg id="icon-theme" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12A6 6 0 1 1 8 2z"/>
         </svg>
       </button>
@@ -39,7 +44,6 @@
           <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/>
           <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
         </svg>
-        <span>Refresh</span>
       </button>
     </div>
   </div>
@@ -54,7 +58,7 @@
       <div id="content" class="markdown-body"></div>
       <div id="empty-state">
         <p>No file open</p>
-        <button id="btn-open">Open File</button>
+        <button class="btn" id="btn-open">Open File <span class="shortcut-hint">⌘O</span></button>
       </div>
     </div>
   </div>
@@ -69,8 +73,8 @@
         Do not show this message again
       </label>
       <div class="modal-actions">
-        <button class="modal-btn" id="cli-not-now">Not Now</button>
-        <button class="modal-btn modal-btn-primary" id="cli-install">Install</button>
+        <button class="btn" id="cli-not-now">Not Now</button>
+        <button class="btn btn-primary" id="cli-install">Install</button>
       </div>
     </div>
   </div>
@@ -80,7 +84,7 @@
       <h3 id="cli-result-title"></h3>
       <p id="cli-result-message"></p>
       <div class="modal-actions">
-        <button class="modal-btn modal-btn-primary" id="cli-result-ok">OK</button>
+        <button class="btn btn-primary" id="cli-result-ok">OK</button>
       </div>
     </div>
   </div>
@@ -96,15 +100,22 @@
           <option value="">System Default</option>
         </select>
       </div>
+      <div class="setting-row">
+        <label for="threshold-input">Long Recording Alert</label>
+        <div class="threshold-input-row">
+          <input type="number" id="threshold-input" min="30" max="300" step="10" value="60">
+          <span class="unit">seconds</span>
+        </div>
+      </div>
       <div class="shortcut-config">
         <label for="shortcut-input">Shortcut</label>
         <div class="shortcut-input-row">
           <input type="text" id="shortcut-input" readonly placeholder="Press keys...">
-          <button class="modal-btn" id="shortcut-record-btn">Change</button>
+          <button class="btn" id="shortcut-record-btn">Change</button>
         </div>
       </div>
       <div class="modal-actions">
-        <button class="modal-btn" id="whisper-settings-close">Close</button>
+        <button class="btn" id="whisper-settings-close">Close</button>
       </div>
     </div>
   </div>
