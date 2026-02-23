@@ -10,6 +10,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 #[cfg(target_os = "macos")]
 mod cli_installer;
+mod ipc_common;
 #[cfg(unix)]
 mod ipc;
 mod tcp_ipc;

@@ -1,24 +1,9 @@
-use serde::{Deserialize, Serialize};
+use crate::ipc_common::{process_command, IpcCommand, IpcResponse};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
-
-// Public structs for reuse in tcp_ipc module
-#[derive(Deserialize)]
-pub struct IpcCommand {
-    pub command: String,
-    #[serde(default)]
-    pub path: Option<String>,
-}
-
-#[derive(Serialize)]
-pub struct IpcResponse {
-    pub success: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
 
 pub struct SocketState(pub Mutex<Option<PathBuf>>);
 
@@ -132,64 +117,4 @@ async fn handle_client(stream: UnixStream, app: tauri::AppHandle) -> Result<(), 
     }
 
     Ok(())
-}
-
-// Public function for reuse in tcp_ipc module
-pub fn process_command(cmd: IpcCommand, app: &tauri::AppHandle) -> IpcResponse {
-    match cmd.command.as_str() {
-        "open" => {
-            if let Some(path) = cmd.path {
-                match std::fs::canonicalize(&path) {
-                    Ok(abs_path) => {
-                        let path_str = abs_path.to_string_lossy().to_string();
-
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.unminimize();
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-
-                        match app.emit("open-file", &path_str) {
-                            Ok(_) => IpcResponse {
-                                success: true,
-                                error: None,
-                            },
-                            Err(e) => IpcResponse {
-                                success: false,
-                                error: Some(format!("Failed to emit event: {}", e)),
-                            },
-                        }
-                    }
-                    Err(e) => IpcResponse {
-                        success: false,
-                        error: Some(format!("Invalid path: {}", e)),
-                    },
-                }
-            } else {
-                IpcResponse {
-                    success: false,
-                    error: Some("Missing 'path' field".to_string()),
-                }
-            }
-        }
-        "ping" => IpcResponse {
-            success: true,
-            error: None,
-        },
-        "show" => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
-            IpcResponse {
-                success: true,
-                error: None,
-            }
-        }
-        _ => IpcResponse {
-            success: false,
-            error: Some(format!("Unknown command: {}", cmd.command)),
-        },
-    }
 }

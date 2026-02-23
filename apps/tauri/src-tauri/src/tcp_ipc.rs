@@ -1,4 +1,4 @@
-use crate::ipc::{IpcCommand, IpcResponse, process_command};
+use crate::ipc_common::{process_command, IpcCommand, IpcResponse};
 use std::sync::Mutex;
 use tauri::Manager;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
