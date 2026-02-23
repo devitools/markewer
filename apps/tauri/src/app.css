@@ -242,23 +242,7 @@ html.dark link[media*="light"] { media: not all; }
 #recording-btn {
     width: 30px;
     border-radius: 6px;
-    transition: color 0.2s;
-}
-
-#recording-btn.recording-idle {
     color: var(--text-muted);
-}
-
-#recording-btn.recording-active {
-    color: #ff3b30;
-    border-color: #ff3b30;
-    animation: pulse-recording 1s ease-in-out infinite;
-}
-
-#recording-btn.recording-processing {
-    color: #ff9500;
-    border-color: #ff9500;
-    animation: pulse-recording 0.6s ease-in-out infinite;
 }
 
 #whisper-settings-btn {
@@ -271,11 +255,6 @@ html.dark link[media*="light"] { media: not all; }
 
 #whisper-settings-btn:hover {
     color: var(--text);
-}
-
-@keyframes pulse-recording {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
 }
 
 /* CLI install modals */

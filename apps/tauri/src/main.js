@@ -588,50 +588,30 @@ const recordingBtn = document.getElementById("recording-btn");
 let isRecording = false;
 let currentShortcutLabel = "⌥Space";
 
-function setRecordingState(state) {
-  recordingBtn.className = "recording-" + state;
-  switch (state) {
-    case "active":
-      recordingBtn.title = "Recording... (" + currentShortcutLabel + " to stop)";
-      break;
-    case "processing":
-      recordingBtn.title = "Transcribing...";
-      break;
-    default:
-      recordingBtn.title = "Voice-to-text (" + currentShortcutLabel + ")";
-  }
-}
-
 listen("start-recording-shortcut", () => {
   isRecording = true;
-  setRecordingState("active");
 });
 
 listen("start-recording-button", () => {
   isRecording = true;
-  setRecordingState("active");
 });
 
 listen("stop-recording", () => {
   isRecording = false;
-  setRecordingState("processing");
 });
 
 listen("transcription-complete", () => {
   isRecording = false;
-  setRecordingState("idle");
 });
 
 listen("recording-error", (event) => {
   console.error("Recording error:", event.payload);
   isRecording = false;
-  setRecordingState("idle");
 });
 
 listen("transcription-error", (event) => {
   console.error("Transcription error:", event.payload);
   isRecording = false;
-  setRecordingState("idle");
 });
 
 // Whisper settings modal
@@ -851,7 +831,6 @@ shortcutInput.addEventListener("keydown", async (e) => {
   try {
     await invoke("set_shortcut", { shortcut });
     currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replaceAll("+", "");
-    setRecordingState("idle");
   } catch (err) {
     shortcutInput.value = "Invalid — try again";
     setTimeout(() => { shortcutInput.value = "Press keys..."; }, 1500);
@@ -909,9 +888,6 @@ document.getElementById("cli-result-ok").addEventListener("click", () => hideMod
   const initialFile = await invoke("get_initial_file");
   if (initialFile) {
     loadFile(initialFile);
-  } else {
-    // Show window if no initial file (allows user to open file via menu)
-    getCurrentWindow().show();
   }
 
   const status = await invoke("check_cli_status");
