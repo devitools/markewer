@@ -648,7 +648,15 @@ async function loadModelList() {
 
     const info = document.createElement("div");
     info.className = "model-info";
-    info.innerHTML = `<strong>${m.info.id}</strong><span class="model-desc">${m.info.description}</span>`;
+
+    const strong = document.createElement("strong");
+    strong.textContent = m.info.id;
+    info.appendChild(strong);
+
+    const desc = document.createElement("span");
+    desc.className = "model-desc";
+    desc.textContent = m.info.description;
+    info.appendChild(desc);
 
     const actions = document.createElement("div");
     actions.className = "model-actions";
@@ -841,7 +849,7 @@ shortcutInput.addEventListener("keydown", async (e) => {
 
   try {
     await invoke("set_shortcut", { shortcut });
-    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replace("+", "");
+    currentShortcutLabel = shortcut.replace("Alt", "⌥").replace("Ctrl", "⌃").replace("Shift", "⇧").replace("Super", "⌘").replaceAll("+", "");
     setRecordingState("idle");
   } catch (err) {
     shortcutInput.value = "Invalid — try again";
