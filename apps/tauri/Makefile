@@ -37,6 +37,7 @@ install:
 		echo "❌ App not found. Run 'make build' or 'make build-dev' first."; \
 		exit 1; \
 	fi
+	@mkdir -p "$(HOME)/Applications"
 	@echo "Installing $(APP_NAME) to ~/Applications..."
 	@cp -R "$(BUNDLE_DIR)/$(APP_NAME)" "$(APP_DEST)"
 	@echo "Installing CLI to $(CLI_DEST)..."
