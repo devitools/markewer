@@ -138,6 +138,8 @@ async function loadFile(path) {
   }
 }
 
+let headingObserver = null;
+
 function populateOutline(headings) {
   const list = document.getElementById("outline-list");
   list.innerHTML = "";
@@ -145,11 +147,73 @@ function populateOutline(headings) {
     const li = document.createElement("li");
     li.textContent = h.text;
     li.dataset.level = h.level;
+    li.dataset.headingIndex = h.index;
     li.addEventListener("click", () => {
       const el = document.getElementById("mkw-heading-" + h.index);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     list.appendChild(li);
+  });
+
+  setupScrollTracking(headings);
+}
+
+function setupScrollTracking(headings) {
+  if (headingObserver) {
+    headingObserver.disconnect();
+  }
+
+  const contentArea = document.getElementById("content-area");
+  const outlineList = document.getElementById("outline-list");
+  const activeHeadings = new Map();
+
+  headingObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const headingId = entry.target.id;
+        const index = headingId.replace("mkw-heading-", "");
+
+        if (entry.isIntersecting) {
+          activeHeadings.set(index, entry.intersectionRatio);
+        } else {
+          activeHeadings.delete(index);
+        }
+      });
+
+      outlineList.querySelectorAll("li.active").forEach((li) => {
+        li.classList.remove("active");
+      });
+
+      if (activeHeadings.size > 0) {
+        const mostVisible = Array.from(activeHeadings.entries()).reduce((a, b) =>
+          a[1] > b[1] ? a : b
+        );
+        const activeIndex = mostVisible[0];
+        const activeLi = outlineList.querySelector(`li[data-heading-index="${activeIndex}"]`);
+        if (activeLi) {
+          activeLi.classList.add("active");
+          const sidebar = document.getElementById("sidebar");
+          const liTop = activeLi.offsetTop;
+          const liBottom = liTop + activeLi.offsetHeight;
+          const sidebarScrollTop = sidebar.scrollTop;
+          const sidebarHeight = sidebar.clientHeight;
+
+          if (liTop < sidebarScrollTop || liBottom > sidebarScrollTop + sidebarHeight) {
+            activeLi.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+      }
+    },
+    {
+      root: contentArea,
+      rootMargin: "-10% 0px -70% 0px",
+      threshold: [0, 0.2, 0.5, 0.8, 1.0],
+    }
+  );
+
+  headings.forEach((h) => {
+    const el = document.getElementById("mkw-heading-" + h.index);
+    if (el) headingObserver.observe(el);
   });
 }
 
@@ -534,6 +598,11 @@ function closeFile() {
   document.getElementById("toolbar-info").style.display = "none";
   document.getElementById("content").innerHTML = "";
   document.getElementById("outline-list").innerHTML = "";
+
+  if (headingObserver) {
+    headingObserver.disconnect();
+    headingObserver = null;
+  }
 
   // Clear comments state
   selectedBlocks = [];

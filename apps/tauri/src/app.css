@@ -146,6 +146,18 @@ body:not(.no-file) #toolbar-info {
     background: var(--code-bg);
 }
 
+#outline-list li.active {
+    background: var(--code-bg);
+    color: var(--link);
+    font-weight: 600;
+    border-left: 3px solid var(--link);
+    padding-left: 5px;
+}
+
+#outline-list li.active[data-level="2"] { padding-left: 17px; }
+#outline-list li.active[data-level="3"] { padding-left: 29px; }
+#outline-list li.active[data-level="4"] { padding-left: 41px; }
+
 #outline-list li[data-level="1"] { padding-left: 8px; font-size: 13px; font-weight: 600; color: var(--text); }
 #outline-list li[data-level="2"] { padding-left: 20px; font-size: 12px; font-weight: 500; color: var(--text-muted); }
 #outline-list li[data-level="3"] { padding-left: 32px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
