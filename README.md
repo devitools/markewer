@@ -21,7 +21,15 @@ A minimal, cross-platform Markdown viewer with plan review comments and voice-to
 
 ### CLI
 - `arandu README.md` — Open files from terminal
+- Fast IPC via Unix socket (instant file opening if app is running)
+- Automatic fallback to traditional launch if app is closed
 - Installable via Homebrew (macOS) or manual download
+
+### System Tray
+- Persistent tray icon with custom "A" glyph
+- Click to show main window
+- "Show Window" and "Quit" menu items
+- Closing window hides to tray instead of quitting (macOS/Linux behavior)
 
 ## Installation
 
@@ -91,6 +99,17 @@ npm install        # install dependencies
 make dev           # run in development mode
 ```
 
+### Architecture Overview
+
+- **Backend:** Rust (Tauri framework) in `apps/tauri/src-tauri/src/`
+  - `lib.rs` - Core logic and Tauri commands
+  - `ipc.rs` - Unix socket server (CLI communication)
+  - `tray.rs` - System tray integration
+  - `whisper/` - Voice transcription module
+- **Frontend:** Vanilla JS + HTML in `apps/tauri/src/`
+  - No build step or bundler - served directly
+  - Communicates with Rust via `window.__TAURI__.core.invoke()`
+
 ### Build Commands
 
 **Using Makefile (recommended):**
@@ -118,3 +137,13 @@ npx tauri build    # production build
 ```bash
 scripts/set-version.sh 0.3.0   # update version across all config files
 ```
+
+## Contributing
+
+For detailed architecture documentation, build instructions, and codebase guidance, see [CLAUDE.md](./CLAUDE.md).
+
+Key points:
+- The macOS native app (`apps/macos/`) is deprecated - use Tauri version only
+- Frontend is vanilla JS with no build step
+- Tauri commands in `lib.rs` bridge JS and Rust
+- IPC socket enables fast CLI-to-app communication on Unix systems
