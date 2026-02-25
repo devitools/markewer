@@ -45,7 +45,11 @@ class TabState {
   constructor(path) {
     this.id = crypto.randomUUID();
     this.path = path;
-    this.displayName = path.split('/').pop();
+    // Display folder/filename (e.g., "arandu/prd.md")
+    const parts = path.split('/');
+    this.displayName = parts.length > 1
+      ? parts.slice(-2).join('/')
+      : parts[0];
 
     this.scrollPosition = 0;
 
