@@ -495,6 +495,14 @@ body.no-file #empty-state {
     display: flex;
 }
 
+body.no-file #sidebar {
+    display: none;
+}
+
+body.no-file #sidebar-handle {
+    display: none;
+}
+
 /* Theme override classes */
 html.light {
     --bg: #ffffff;
