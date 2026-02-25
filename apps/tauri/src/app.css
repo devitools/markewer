@@ -302,7 +302,7 @@ html.macos #tab-bar {
     padding: 8px 16px;
     border-top: 1px solid var(--border);
     display: flex;
-    justify-content: center;
+    justify-content: end;
 }
 
 .history-clear-link {
@@ -530,7 +530,7 @@ html.dark {
     --blockquote-border: #48484a;
     --blockquote-text: #98989d;
     --table-header-bg: #2c2c2e;
-    --sidebar-bg: #2b2b2b;
+    --sidebar-bg: #2f2f2f;
     --warning-bg: #a67c34;
     --warning-text: #f2f2f7;
     --error-bg: #a94442;
