@@ -487,6 +487,32 @@ html.macos #tab-bar {
     margin-top: 16px;
 }
 
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.error-state h3 {
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.error-state .error-path {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    margin: 0 0 24px 0;
+    word-break: break-all;
+    max-width: 600px;
+}
+
 body.no-file #content {
     display: none;
 }

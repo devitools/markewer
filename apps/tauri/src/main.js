@@ -243,13 +243,25 @@ async function loadFileIntoTab(tabId, path) {
     if (tab) {
       tab.displayName = `${tab.displayName} (missing)`;
       if (tabId === activeTabId) {
-        document.getElementById("content").innerHTML = `
-          <div class="error-state" style="text-align: center; padding: 40px;">
-            <h3>File Not Found</h3>
-            <p>${path}</p>
-            <button onclick="closeTab('${tabId}')" class="btn btn-primary">Close Tab</button>
-          </div>
+        // Clear outline for error state
+        document.getElementById("outline-list").innerHTML = "";
+
+        // Show error state
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "error-state";
+        errorDiv.innerHTML = `
+          <h3>File Not Found</h3>
+          <p class="error-path">${path}</p>
         `;
+
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "btn btn-primary";
+        closeBtn.textContent = "Close Tab";
+        closeBtn.onclick = () => closeTab(tabId);
+        errorDiv.appendChild(closeBtn);
+
+        document.getElementById("content").innerHTML = "";
+        document.getElementById("content").appendChild(errorDiv);
       }
     }
   }
