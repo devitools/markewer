@@ -101,10 +101,10 @@ body:not(.no-file) #toolbar-info {
 
 /* Tab Bar */
 #tab-bar {
-    height: 40px;
+    height: 46px;
     display: flex;
     align-items: end;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     background: var(--sidebar-bg);
     overflow: hidden;
 }
@@ -118,6 +118,7 @@ html.macos #tab-bar {
     display: flex;
     overflow-x: auto;
     scrollbar-width: none;
+    gap: 10px;
 }
 
 .tab-scroll::-webkit-scrollbar {
@@ -127,9 +128,8 @@ html.macos #tab-bar {
 .tab-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 6px 6px 16px;
-    border-color: var(--border);
+    gap: 12px;
+    padding: 8px 8px 4px 16px;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s ease;
@@ -137,15 +137,16 @@ html.macos #tab-bar {
     border-width: 1px 1px 0 1px;
     border-style: solid;
     border-radius: 4px 4px 0 0;
+    border-color: var(--code-bg);
 }
 
 .tab-item:hover {
-    background: var(--code-bg);
+    background: var(--border);
 }
 
 .tab-item.active {
-    background: var(--bg);
-    font-weight: 600;
+    border-color: var(--border);
+    background: var(--border);
 }
 
 .tab-name {
@@ -184,7 +185,6 @@ html.macos #tab-bar {
     width: 36px;
     height: 36px;
     border: none;
-    border-left: 1px solid var(--border);
     background: transparent;
     cursor: pointer;
     color: var(--text);
@@ -247,6 +247,9 @@ html.macos #tab-bar {
     display: block;
     font-weight: 500;
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .history-path {
@@ -254,6 +257,9 @@ html.macos #tab-bar {
     font-size: 11px;
     opacity: 0.6;
     margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .history-empty {
@@ -264,13 +270,25 @@ html.macos #tab-bar {
 }
 
 .history-footer {
-    padding: 8px 16px;
+    padding: 6px 8px;
     border-top: 1px solid var(--border);
-    text-align: center;
+    display: flex;
+    justify-content: flex-end;
 }
 
-.history-footer .btn {
-    width: 100%;
+.history-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.history-menu-btn:hover {
+    color: var(--text);
 }
 
 #split {

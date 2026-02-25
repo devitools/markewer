@@ -88,6 +88,14 @@ function formatPath(path) {
   return path;
 }
 
+function truncateMiddle(str, maxLength = 40) {
+  if (str.length <= maxLength) return str;
+  const charsToShow = maxLength - 3; // Reserve 3 chars for "..."
+  const frontChars = Math.ceil(charsToShow / 2);
+  const backChars = Math.floor(charsToShow / 2);
+  return str.substring(0, frontChars) + '...' + str.substring(str.length - backChars);
+}
+
 function applyTheme(theme) {
   currentTheme = theme;
   localStorage.setItem("arandu-theme", theme);
@@ -388,10 +396,12 @@ async function showHistoryDropdown() {
       const name = document.createElement("span");
       name.className = "history-name";
       name.textContent = entry.path.split('/').pop();
+      name.title = entry.path.split('/').pop(); // Full name on hover
 
       const path = document.createElement("span");
       path.className = "history-path";
-      path.textContent = entry.path;
+      path.textContent = truncateMiddle(formatPath(entry.path), 55);
+      path.title = entry.path; // Full path on hover
 
       item.appendChild(name);
       item.appendChild(path);
