@@ -72,6 +72,7 @@ class TabState {
     this.content = null;
     this.html = null;
     this.headings = null;
+    this.hasError = false; // Track if file failed to load
 
     this.commentsData = { version: "1.0", file_hash: "", comments: [] };
     this.selectedBlocks = [];
@@ -242,29 +243,40 @@ async function loadFileIntoTab(tabId, path) {
     const tab = tabs.find(t => t.id === tabId);
     if (tab) {
       tab.displayName = `${tab.displayName} (missing)`;
+      tab.hasError = true;
       if (tabId === activeTabId) {
-        // Clear outline for error state
-        document.getElementById("outline-list").innerHTML = "";
-
-        // Show error state
-        const errorDiv = document.createElement("div");
-        errorDiv.className = "error-state";
-        errorDiv.innerHTML = `
-          <h3>File Not Found</h3>
-          <p class="error-path">${path}</p>
-        `;
-
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "btn btn-primary";
-        closeBtn.textContent = "Close Tab";
-        closeBtn.onclick = () => closeTab(tabId);
-        errorDiv.appendChild(closeBtn);
-
-        document.getElementById("content").innerHTML = "";
-        document.getElementById("content").appendChild(errorDiv);
+        showErrorState(tabId, path);
       }
     }
+    updateTabBarUI();
   }
+}
+
+function showErrorState(tabId, path) {
+  // Clear outline for error state
+  document.getElementById("outline-list").innerHTML = "";
+
+  // Show error state
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "error-state";
+  errorDiv.innerHTML = `
+    <h3>File Not Found</h3>
+    <p class="error-path">${path}</p>
+  `;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn-primary";
+  closeBtn.textContent = "Close Tab";
+  closeBtn.onclick = () => closeTab(tabId);
+  errorDiv.appendChild(closeBtn);
+
+  document.getElementById("content").innerHTML = "";
+  document.getElementById("content").appendChild(errorDiv);
+
+  document.body.classList.remove("no-file");
+  document.getElementById("toolbar-title").textContent = formatPath(path);
+  document.getElementById("toolbar-title").title = path;
+  document.getElementById("toolbar-info").style.display = "flex";
 }
 
 function renderTabContent(tab) {
@@ -356,7 +368,10 @@ function switchToTab(tabId) {
   selectedBlocks = [...tab.selectedBlocks];
   currentPath = tab.path;
 
-  if (tab.html) {
+  // If tab has error, show error state
+  if (tab.hasError) {
+    showErrorState(tabId, tab.path);
+  } else if (tab.html) {
     renderTabContent(tab);
     setTimeout(() => {
       document.getElementById("content-area").scrollTop = tab.scrollPosition;
