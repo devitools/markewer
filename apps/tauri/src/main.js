@@ -45,11 +45,27 @@ class TabState {
   constructor(path) {
     this.id = crypto.randomUUID();
     this.path = path;
-    // Display folder/filename (e.g., "arandu/prd.md")
+
+    // Display folder/filename with smart truncation
     const parts = path.split('/');
-    this.displayName = parts.length > 1
-      ? parts.slice(-2).join('/')
-      : parts[0];
+    if (parts.length > 1) {
+      const fileName = parts[parts.length - 1];
+      const folderName = parts[parts.length - 2];
+
+      // Truncate folder name in the middle if too long
+      const maxFolderLength = 20;
+      let displayFolder = folderName;
+      if (folderName.length > maxFolderLength) {
+        const charsToShow = maxFolderLength - 3;
+        const frontChars = Math.ceil(charsToShow / 2);
+        const backChars = Math.floor(charsToShow / 2);
+        displayFolder = folderName.substring(0, frontChars) + '...' + folderName.substring(folderName.length - backChars);
+      }
+
+      this.displayName = displayFolder + '/' + fileName;
+    } else {
+      this.displayName = parts[0];
+    }
 
     this.scrollPosition = 0;
 
