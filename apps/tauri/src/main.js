@@ -40,6 +40,12 @@ let currentPath = null;
 let commentsData = { version: "1.0", file_hash: "", comments: [] };
 let selectedBlocks = [];
 let saveQueue = Promise.resolve();
+let chatWebSocket = null;
+let chatConnected = false;
+let currentChatMessageId = null;
+let chatReconnectAttempts = 0;
+let chatReconnectTimeout = null;
+let chatMessageTimeout = null;
 
 function applyTheme(theme) {
   currentTheme = theme;
@@ -137,6 +143,13 @@ async function loadFile(path) {
     getCurrentWindow().show();
   } catch (e) {
     console.error("Failed to load file:", e);
+
+    // Show visual feedback for file not found
+    const errorMsg = e.toString().includes('No such file') || e.toString().includes('os error 2')
+      ? 'File not found'
+      : 'Failed to load file';
+
+    showTemporaryMessage(errorMsg, 3000);
   }
 }
 
@@ -646,6 +659,15 @@ document.getElementById("toolbar").addEventListener("dblclick", async (e) => {
 
 const sidebarHandle = document.getElementById("sidebar-handle");
 const sidebar = document.getElementById("sidebar");
+
+// Restore saved sidebar width
+const savedSidebarWidth = localStorage.getItem('sidebar-width');
+if (savedSidebarWidth) {
+  const width = parseInt(savedSidebarWidth, 10);
+  sidebar.style.width = width + "px";
+  sidebar.style.minWidth = width + "px";
+}
+
 sidebarHandle.addEventListener("mousedown", (e) => {
   e.preventDefault();
   sidebarHandle.classList.add("active");
@@ -658,6 +680,8 @@ sidebarHandle.addEventListener("mousedown", (e) => {
     sidebarHandle.classList.remove("active");
     document.removeEventListener("mousemove", onMove);
     document.removeEventListener("mouseup", onUp);
+    // Save sidebar width
+    localStorage.setItem('sidebar-width', sidebar.offsetWidth);
   };
   document.addEventListener("mousemove", onMove);
   document.addEventListener("mouseup", onUp);
@@ -993,6 +1017,9 @@ listen("menu-open-file", () => {
 
 applyTheme(currentTheme);
 
+// Auto-connect to Copilot server on startup
+initializeChatWebSocket();
+
 if (!currentPath) {
   document.body.classList.add("no-file");
   document.getElementById("toolbar-title").textContent = "";
@@ -1061,15 +1088,432 @@ document.getElementById("review-close").addEventListener("click", () => {
   document.getElementById("review-modal").style.display = "none";
 });
 
-document.getElementById("review-copy").addEventListener("click", async () => {
+document.getElementById("review-send-chat").addEventListener("click", () => {
   const text = document.getElementById("review-output").value;
 
-  try {
-    await window.__TAURI__.clipboardManager.writeText(text);
-    alert("Review prompt copied to clipboard!");
-    document.getElementById("review-modal").style.display = "none";
-  } catch (e) {
-    console.error("Failed to copy:", e);
-    alert("Failed to copy to clipboard");
+  // Close modal
+  document.getElementById("review-modal").style.display = "none";
+
+  // Make sure chat is visible (already is by default now)
+  const chatPanel = document.getElementById('chat-panel');
+  if (!chatPanel.classList.contains('visible')) {
+    chatPanel.classList.add('visible');
+    document.getElementById('chat-handle').style.display = 'block';
+    document.getElementById('split').classList.add('chat-visible');
+  }
+
+  // Set input value
+  const chatInput = document.getElementById('chat-input');
+  chatInput.value = text;
+  chatInput.style.height = 'auto';
+  chatInput.style.height = chatInput.scrollHeight + 'px';
+
+  // Focus input
+  chatInput.focus();
+
+  // Send automatically
+  sendChatMessage();
+});
+
+// ========================================
+// Chat Functions
+// ========================================
+
+function updateServerStatus(message) {
+  const statusEl = document.getElementById('server-status');
+  if (statusEl) {
+    statusEl.textContent = message;
+    statusEl.style.opacity = '1';
+    setTimeout(() => {
+      if (statusEl.textContent === message) {
+        statusEl.style.opacity = '0.4';
+      }
+    }, 2000);
+  }
+}
+
+function initializeChatWebSocket() {
+  if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) return;
+
+  // Clear existing connection
+  if (chatWebSocket) {
+    chatWebSocket.close();
+    chatWebSocket = null;
+  }
+
+  console.log('🔌 Connecting to Copilot server...');
+  chatWebSocket = new WebSocket('ws://localhost:8765');
+
+  chatWebSocket.onopen = () => {
+    console.log('✓ Connected to Copilot server');
+    chatConnected = true;
+    chatReconnectAttempts = 0; // Reset on successful connection
+  };
+
+  chatWebSocket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'connected') {
+      console.log('✓ Copilot ready (session:', data.sessionId, ')');
+      updateServerStatus('Connected');
+      // Request sessions list for empty state
+      if (!currentPath) {
+        requestSessionsList();
+      }
+    }
+
+    if (data.type === 'chunk') {
+      if (!currentChatMessageId) {
+        currentChatMessageId = crypto.randomUUID();
+        appendChatMessage('assistant', '', currentChatMessageId, true, data.chunkType);
+      }
+      appendToChatMessage(currentChatMessageId, data.text);
+
+      // Reset timeout - auto-finalize if 2s without chunks
+      if (chatMessageTimeout) clearTimeout(chatMessageTimeout);
+      chatMessageTimeout = setTimeout(() => {
+        if (currentChatMessageId) {
+          console.log('[DEBUG] Auto-finalizing message due to timeout');
+          finalizeChatMessage(currentChatMessageId);
+          currentChatMessageId = null;
+        }
+      }, 2000);
+    }
+
+    if (data.type === 'done') {
+      if (chatMessageTimeout) clearTimeout(chatMessageTimeout);
+      if (currentChatMessageId) {
+        finalizeChatMessage(currentChatMessageId);
+        currentChatMessageId = null;
+      }
+    }
+
+    if (data.type === 'sessions_list') {
+      renderSessionsList(data.sessions || []);
+    }
+
+    if (data.type === 'session_loaded') {
+      console.log('✓ Session loaded:', data.sessionId);
+    }
+
+    if (data.type === 'error') {
+      console.error('Chat error:', data.message);
+      if (currentChatMessageId) {
+        finalizeChatMessage(currentChatMessageId);
+        currentChatMessageId = null;
+      }
+    }
+  };
+
+  chatWebSocket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+    chatConnected = false;
+  };
+
+  chatWebSocket.onclose = () => {
+    console.log('Disconnected from Copilot server');
+    chatConnected = false;
+    chatWebSocket = null;
+
+    // Auto-reconnect with exponential backoff
+    chatReconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(2, chatReconnectAttempts), 30000); // Max 30s
+    console.log(`🔄 Reconnecting in ${delay}ms (attempt ${chatReconnectAttempts})...`);
+
+    chatReconnectTimeout = setTimeout(() => {
+      initializeChatWebSocket();
+    }, delay);
+  };
+}
+
+function requestSessionsList() {
+  if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+    const loadingEl = document.getElementById('sessions-loading');
+    const sectionEl = document.getElementById('sessions-section');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (sectionEl) sectionEl.style.display = 'block';
+    chatWebSocket.send(JSON.stringify({ type: 'list_sessions' }));
+  }
+}
+
+function renderSessionsList(sessions) {
+  const listEl = document.getElementById('sessions-list');
+  const loadingEl = document.getElementById('sessions-loading');
+  const sectionEl = document.getElementById('sessions-section');
+
+  if (!listEl) return;
+  if (loadingEl) loadingEl.style.display = 'none';
+
+  listEl.innerHTML = '';
+
+  if (sessions.length === 0) {
+    if (sectionEl) sectionEl.style.display = 'none';
+    return;
+  }
+
+  if (sectionEl) sectionEl.style.display = 'block';
+
+  sessions.slice(0, 10).forEach(session => {
+    const li = document.createElement('li');
+    li.className = 'session-item';
+    li.title = session.sessionId;
+
+    // Top row: title + plan button
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'session-info';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'session-title';
+    titleSpan.textContent = session.title || session.sessionId;
+
+    const planBtn = document.createElement('button');
+    planBtn.className = 'session-plan-btn';
+    planBtn.title = 'Open session plan';
+    planBtn.textContent = 'Plan';
+    planBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const homeDir = await invoke('get_home_dir');
+      if (homeDir) {
+        const planPath = `${homeDir}/.copilot/session-state/${session.sessionId}/plan.md`;
+        loadFile(planPath);
+      }
+    });
+
+    infoDiv.appendChild(titleSpan);
+    infoDiv.appendChild(planBtn);
+
+    // Bottom row: metadata
+    const metaSpan = document.createElement('span');
+    metaSpan.className = 'session-meta';
+    const metaParts = [];
+    if (session.updatedAt) {
+      const date = new Date(session.updatedAt);
+      metaParts.push(date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
+    }
+    metaParts.push(session.sessionId);
+    metaSpan.textContent = metaParts.join(' · ');
+
+    li.appendChild(infoDiv);
+    li.appendChild(metaSpan);
+
+    li.addEventListener('click', () => {
+      if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+        chatWebSocket.send(JSON.stringify({ type: 'load_session', sessionId: session.sessionId }));
+      }
+    });
+
+    listEl.appendChild(li);
+  });
+}
+
+function toggleChatPanel() {
+  const chatPanel = document.getElementById('chat-panel');
+  const chatHandle = document.getElementById('chat-handle');
+  const split = document.getElementById('split');
+
+  if (chatPanel.classList.contains('visible')) {
+    chatPanel.classList.remove('visible');
+    chatHandle.style.display = 'none';
+    split.classList.remove('chat-visible');
+  } else {
+    chatPanel.classList.add('visible');
+    chatHandle.style.display = 'block';
+    split.classList.add('chat-visible');
+
+    // WebSocket already auto-connects on startup
+    document.getElementById('chat-input').focus();
+  }
+}
+
+function appendChatMessage(role, text, id, streaming = false, messageType = null) {
+  const messagesDiv = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+
+  // Base classes
+  let classes = `chat-message ${role}`;
+  if (streaming) classes += ' streaming';
+
+  // Add message type class (agent-message, agent-thought, etc.)
+  if (messageType) {
+    const typeClass = messageType.replace(/_/g, '-'); // agent_message_chunk -> agent-message-chunk
+    classes += ` ${typeClass}`;
+    msg.dataset.messageType = messageType;
+  }
+
+  msg.className = classes;
+  msg.dataset.messageId = id;
+  msg.textContent = text;
+  messagesDiv.appendChild(msg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function appendToChatMessage(id, text) {
+  const msg = document.querySelector(`[data-message-id="${id}"]`);
+  if (msg) {
+    msg.textContent += text;
+    const messagesDiv = document.getElementById('chat-messages');
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+}
+
+async function finalizeChatMessage(id) {
+  const msg = document.querySelector(`[data-message-id="${id}"]`);
+  if (msg) {
+    msg.classList.remove('streaming');
+
+    // Render all assistant messages with markdown
+    if (msg.classList.contains('assistant')) {
+      const text = msg.textContent;
+      try {
+        const html = await invoke('render_markdown', { content: text });
+        msg.innerHTML = html;
+        msg.classList.add('markdown-body');
+      } catch (err) {
+        console.error('Failed to render markdown:', err);
+      }
+    }
+  }
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+
+  if (!text || !chatConnected) return;
+
+  const messageId = crypto.randomUUID();
+  appendChatMessage('user', text, messageId);
+
+  chatWebSocket.send(JSON.stringify({ type: 'prompt', text }));
+
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+// Utility: show temporary message
+function showTemporaryMessage(message, duration = 3000) {
+  // Check if there's already a message toast
+  let toast = document.getElementById('temp-message-toast');
+
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'temp-message-toast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      background: var(--code-bg);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    `;
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.style.opacity = '1';
+
+  // Clear existing timeout
+  if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+
+  // Hide after duration
+  toast.hideTimeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 200);
+  }, duration);
+}
+
+// Chat event listeners
+document.getElementById('btn-chat').addEventListener('click', toggleChatPanel);
+document.getElementById('chat-close').addEventListener('click', toggleChatPanel);
+document.getElementById('chat-send').addEventListener('click', sendChatMessage);
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+
+    // Update UI
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Send mode change to server
+    if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+      chatWebSocket.send(JSON.stringify({ type: 'set_mode', mode }));
+      console.log(`🎯 Mode changed to: ${mode}`);
+    }
+  });
+});
+
+document.getElementById('chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
   }
 });
+
+document.getElementById('chat-input').addEventListener('input', (e) => {
+  e.target.style.height = 'auto';
+  e.target.style.height = e.target.scrollHeight + 'px';
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    toggleChatPanel();
+  }
+});
+
+// Chat panel resize
+const chatHandle = document.getElementById('chat-handle');
+const chatPanel = document.getElementById('chat-panel');
+
+if (chatHandle && chatPanel) {
+  // Restore saved chat width
+  const savedChatWidth = localStorage.getItem('chat-width');
+  if (savedChatWidth) {
+    const width = parseInt(savedChatWidth, 10);
+    chatPanel.style.width = width + 'px';
+  }
+
+  let isResizingChat = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  chatHandle.addEventListener('mousedown', (e) => {
+    isResizingChat = true;
+    startX = e.clientX;
+    startWidth = chatPanel.offsetWidth;
+    chatHandle.classList.add('active');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizingChat) return;
+    const deltaX = startX - e.clientX;
+    const newWidth = startWidth + deltaX;
+    if (newWidth >= 250 && newWidth <= 600) {
+      chatPanel.style.width = newWidth + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isResizingChat) {
+      isResizingChat = false;
+      chatHandle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Save chat width
+      localStorage.setItem('chat-width', chatPanel.offsetWidth);
+    }
+  });
+}
