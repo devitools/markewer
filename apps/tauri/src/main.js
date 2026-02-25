@@ -265,7 +265,7 @@ function showErrorState(tabId, path) {
   `;
 
   const closeBtn = document.createElement("button");
-  closeBtn.className = "btn btn-primary";
+  closeBtn.className = "btn";
   closeBtn.textContent = "Close Tab";
   closeBtn.onclick = () => closeTab(tabId);
   errorDiv.appendChild(closeBtn);
@@ -506,15 +506,6 @@ async function clearHistory() {
       console.error("Failed to clear history:", e);
     }
   }
-  hideHistoryMenu();
-}
-
-function showHistoryMenu() {
-  document.getElementById("history-menu").style.display = "block";
-}
-
-function hideHistoryMenu() {
-  document.getElementById("history-menu").style.display = "none";
 }
 
 let headingObserver = null;
@@ -993,21 +984,8 @@ document.getElementById("history-button").addEventListener("click", (e) => {
   }
 });
 
-// History menu (three dots) - use event delegation since elements are created dynamically
+// Clear all history button - use event delegation since elements are created dynamically
 document.addEventListener("click", (e) => {
-  // Three-dot menu button
-  if (e.target.id === "history-menu-btn" || e.target.closest("#history-menu-btn")) {
-    e.stopPropagation();
-    const menu = document.getElementById("history-menu");
-    if (menu && menu.style.display === "block") {
-      hideHistoryMenu();
-    } else {
-      showHistoryMenu();
-    }
-    return;
-  }
-
-  // Clear all history button
   if (e.target.id === "clear-all-history" || e.target.closest("#clear-all-history")) {
     e.stopPropagation();
     clearHistory();
@@ -1018,17 +996,10 @@ document.addEventListener("click", (e) => {
 document.addEventListener("click", (e) => {
   const historyBtn = document.getElementById("history-button");
   const dropdown = document.getElementById("history-dropdown");
-  const menu = document.getElementById("history-menu");
-  const menuBtn = document.getElementById("history-menu-btn");
 
   // Close dropdown if clicking outside
   if (!historyBtn.contains(e.target) && !dropdown.contains(e.target)) {
     hideHistoryDropdown();
-  }
-
-  // Close menu if clicking outside
-  if (menu && menuBtn && !menuBtn.contains(e.target) && !menu.contains(e.target)) {
-    hideHistoryMenu();
   }
 });
 
