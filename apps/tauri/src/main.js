@@ -409,24 +409,38 @@ async function showHistoryDropdown() {
       const item = document.createElement("div");
       item.className = "history-item";
 
+      const content = document.createElement("div");
+      content.className = "history-item-content";
+
       const name = document.createElement("span");
       name.className = "history-name";
       name.textContent = entry.path.split('/').pop();
-      name.title = entry.path.split('/').pop(); // Full name on hover
+      name.title = entry.path.split('/').pop();
 
       const path = document.createElement("span");
       path.className = "history-path";
       path.textContent = truncateMiddle(formatPath(entry.path), 55);
-      path.title = entry.path; // Full path on hover
+      path.title = entry.path;
 
-      item.appendChild(name);
-      item.appendChild(path);
+      content.appendChild(name);
+      content.appendChild(path);
 
-      item.onclick = () => {
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "history-item-remove";
+      removeBtn.textContent = "×";
+      removeBtn.title = "Remove from history";
+      removeBtn.onclick = async (e) => {
+        e.stopPropagation();
+        await removeFromHistory(entry.path);
+      };
+
+      content.onclick = () => {
         openFileInNewTab(entry.path);
         hideHistoryDropdown();
       };
 
+      item.appendChild(content);
+      item.appendChild(removeBtn);
       list.appendChild(item);
     });
   }
@@ -438,14 +452,40 @@ function hideHistoryDropdown() {
   document.getElementById("history-dropdown").style.display = "none";
 }
 
-async function clearHistory() {
+async function removeFromHistory(filePath) {
   try {
-    await invoke("clear_history");
-    fileHistory.entries = [];
-    hideHistoryDropdown();
+    await invoke("remove_from_history", { filePath });
+    await loadFileHistory();
+    await showHistoryDropdown();
   } catch (e) {
-    console.error("Failed to clear history:", e);
+    console.error("Failed to remove from history:", e);
   }
+}
+
+async function clearHistory() {
+  const result = await confirm("Clear all history?", {
+    title: "Clear History",
+    kind: "warning"
+  });
+
+  if (result) {
+    try {
+      await invoke("clear_history");
+      fileHistory.entries = [];
+      hideHistoryDropdown();
+    } catch (e) {
+      console.error("Failed to clear history:", e);
+    }
+  }
+  hideHistoryMenu();
+}
+
+function showHistoryMenu() {
+  document.getElementById("history-menu").style.display = "block";
+}
+
+function hideHistoryMenu() {
+  document.getElementById("history-menu").style.display = "none";
 }
 
 let headingObserver = null;
@@ -924,11 +964,45 @@ document.getElementById("history-button").addEventListener("click", (e) => {
   }
 });
 
+// History menu (three dots)
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("history-menu-btn");
+  const clearAllBtn = document.getElementById("clear-all-history");
+
+  if (menuBtn) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menu = document.getElementById("history-menu");
+      if (menu.style.display === "block") {
+        hideHistoryMenu();
+      } else {
+        showHistoryMenu();
+      }
+    });
+  }
+
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearHistory();
+    });
+  }
+});
+
 document.addEventListener("click", (e) => {
   const historyBtn = document.getElementById("history-button");
   const dropdown = document.getElementById("history-dropdown");
+  const menu = document.getElementById("history-menu");
+  const menuBtn = document.getElementById("history-menu-btn");
+
+  // Close dropdown if clicking outside
   if (!historyBtn.contains(e.target) && !dropdown.contains(e.target)) {
     hideHistoryDropdown();
+  }
+
+  // Close menu if clicking outside
+  if (menu && menuBtn && !menuBtn.contains(e.target) && !menu.contains(e.target)) {
+    hideHistoryMenu();
   }
 });
 

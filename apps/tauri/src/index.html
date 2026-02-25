@@ -187,7 +187,10 @@
       <!-- Populated dynamically -->
     </div>
     <div class="history-footer">
-      <button onclick="clearHistory()" class="history-menu-btn" title="Clear history">⋯</button>
+      <button id="history-menu-btn" class="history-menu-btn" title="Clear history">⋯</button>
+      <div id="history-menu" class="history-menu" style="display:none">
+        <button id="clear-all-history" class="history-menu-item">Clear All History</button>
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* VS Code Light Theme inspired */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 210 68% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 15%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 210 68% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 210 68% 45%;
+
+    --radius: 0.25rem;
+
+    /* Arandu specific tokens */
+    --titlebar-bg: 220 14% 96%;
+    --titlebar-fg: 0 0% 30%;
+    --activitybar-bg: 220 14% 96%;
+    --activitybar-fg: 220 9% 46%;
+    --activitybar-active: 0 0% 15%;
+    --activitybar-indicator: 210 68% 45%;
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 0 0% 30%;
+    --sidebar-primary: 210 68% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 68% 90%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 210 68% 45%;
+    --sidebar-label: 220 9% 46%;
+    --statusbar-bg: 210 68% 45%;
+    --statusbar-fg: 0 0% 100%;
+    --tab-active-bg: 0 0% 100%;
+    --tab-inactive-bg: 220 14% 96%;
+    --tab-active-fg: 0 0% 15%;
+    --tab-inactive-fg: 220 9% 46%;
+    --tab-border: 220 13% 91%;
+    --tab-modified: 35 92% 50%;
+    --editor-bg: 0 0% 100%;
+    --editor-fg: 0 0% 15%;
+    --editor-line-highlight: 210 100% 97%;
+    --block-hover: 210 100% 97%;
+    --block-selected: 210 79% 92%;
+    --block-selected-border: 210 68% 65%;
+    --gutter-fg: 220 9% 72%;
+    --comment-bg: 45 100% 96%;
+    --comment-border: 45 90% 75%;
+    --comment-outdated: 35 92% 50%;
+    --review-bg: 220 14% 97%;
+    --breadcrumb-fg: 220 9% 46%;
+  }
+
+  .dark {
+    --background: 220 17% 17%;
+    --foreground: 220 14% 88%;
+
+    --card: 220 17% 20%;
+    --card-foreground: 220 14% 88%;
+
+    --popover: 220 17% 20%;
+    --popover-foreground: 220 14% 88%;
+
+    --primary: 210 68% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 17% 24%;
+    --secondary-foreground: 220 14% 88%;
+
+    --muted: 220 17% 24%;
+    --muted-foreground: 220 9% 55%;
+
+    --accent: 210 68% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 17% 27%;
+    --input: 220 17% 27%;
+    --ring: 210 68% 55%;
+
+    --titlebar-bg: 220 17% 15%;
+    --titlebar-fg: 220 14% 75%;
+    --activitybar-bg: 220 17% 12%;
+    --activitybar-fg: 0 0% 55%;
+    --activitybar-active: 0 0% 100%;
+    --activitybar-indicator: 210 68% 55%;
+    --sidebar-background: 220 17% 18%;
+    --sidebar-foreground: 220 14% 75%;
+    --sidebar-primary: 210 68% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 17% 24%;
+    --sidebar-accent-foreground: 220 14% 88%;
+    --sidebar-border: 220 17% 24%;
+    --sidebar-ring: 210 68% 55%;
+    --sidebar-label: 220 9% 55%;
+    --statusbar-bg: 210 68% 40%;
+    --statusbar-fg: 0 0% 100%;
+    --tab-active-bg: 220 17% 17%;
+    --tab-inactive-bg: 220 17% 14%;
+    --tab-active-fg: 220 14% 88%;
+    --tab-inactive-fg: 220 9% 55%;
+    --tab-border: 220 17% 24%;
+    --tab-modified: 35 92% 55%;
+    --editor-bg: 220 17% 17%;
+    --editor-fg: 220 14% 88%;
+    --editor-line-highlight: 220 17% 20%;
+    --block-hover: 220 17% 20%;
+    --block-selected: 210 50% 25%;
+    --block-selected-border: 210 68% 45%;
+    --gutter-fg: 220 9% 40%;
+    --comment-bg: 220 17% 22%;
+    --comment-border: 35 50% 40%;
+    --comment-outdated: 35 92% 55%;
+    --review-bg: 220 17% 15%;
+    --breadcrumb-fg: 220 9% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+}
+
+/* Scrollbar styling - VS Code inspired */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}

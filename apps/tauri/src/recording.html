@@ -520,11 +520,14 @@
     });
 
     document.addEventListener('keydown', async (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' || e.code === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
+        console.log('[recording] ESC pressed - canceling');
         try {
           resetRecordingUi();
           await invoke('cancel_recording');
+          console.log('[recording] Recording canceled, hiding window');
           currentWindow.hide();
         } catch (error) {
           console.error("Failed to cancel recording:", error);
@@ -532,7 +535,7 @@
           currentWindow.hide();
         }
       }
-    });
+    }, true);
 
     loadSettings();
 

@@ -1,6 +1,7 @@
 use comrak::{markdown_to_html, Options};
 use notify::{Event, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -10,6 +11,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 #[cfg(target_os = "macos")]
 mod cli_installer;
+mod history;
 mod ipc_common;
 #[cfg(unix)]
 mod ipc;
@@ -114,41 +116,71 @@ fn extract_headings(markdown: String) -> Vec<Heading> {
     headings
 }
 
-struct WatcherState(Mutex<Option<notify::RecommendedWatcher>>);
+struct WatcherState {
+    watcher: Mutex<Option<notify::RecommendedWatcher>>,
+    watched_paths: Mutex<HashSet<PathBuf>>,
+}
+
 struct InitialFile(Mutex<Option<String>>);
 
 pub struct ExplicitQuit(pub Arc<AtomicBool>);
 pub struct IsRecording(pub Arc<AtomicBool>);
 
-#[tauri::command]
-fn watch_file(path: String, app: tauri::AppHandle, state: tauri::State<WatcherState>) -> Result<(), String> {
-    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
-
-    let target = PathBuf::from(&path);
-    let app_handle = app.clone();
-
-    let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
+fn create_file_watcher(app: tauri::AppHandle) -> Result<notify::RecommendedWatcher, String> {
+    notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
         if let Ok(event) = res {
             if event.kind.is_modify() {
-                let _ = app_handle.emit("file-changed", ());
+                if let Some(path) = event.paths.first() {
+                    let path_str = path.to_string_lossy().to_string();
+                    let _ = app.emit("file-changed", path_str);
+                }
             }
         }
     })
-    .map_err(|e| format!("Failed to create watcher: {}", e))?;
+    .map_err(|e| format!("Erro ao criar watcher: {}", e))
+}
 
-    watcher
-        .watch(&target, RecursiveMode::NonRecursive)
-        .map_err(|e| format!("Failed to watch {}: {}", path, e))?;
+#[tauri::command]
+fn watch_file(path: String, app: tauri::AppHandle, state: tauri::State<WatcherState>) -> Result<(), String> {
+    let canonical = std::fs::canonicalize(&path)
+        .map_err(|e| format!("Erro ao canonicalizar: {}", e))?;
 
-    *guard = Some(watcher);
+    let mut watched = state.watched_paths.lock().map_err(|e| e.to_string())?;
+
+    if watched.contains(&canonical) {
+        return Ok(());
+    }
+
+    let mut guard = state.watcher.lock().map_err(|e| e.to_string())?;
+
+    if guard.is_none() {
+        *guard = Some(create_file_watcher(app.clone())?);
+    }
+
+    guard.as_mut()
+        .unwrap()
+        .watch(&canonical, RecursiveMode::NonRecursive)
+        .map_err(|e| format!("Erro ao observar arquivo: {}", e))?;
+
+    watched.insert(canonical);
     Ok(())
 }
 
 #[tauri::command]
-fn unwatch_file(state: tauri::State<WatcherState>) {
-    if let Ok(mut guard) = state.0.lock() {
-        *guard = None;
+fn unwatch_file(path: String, state: tauri::State<WatcherState>) -> Result<(), String> {
+    let canonical = std::fs::canonicalize(&path)
+        .map_err(|e| format!("Arquivo não encontrado: {}", e))?;
+
+    let mut watched = state.watched_paths.lock().map_err(|e| e.to_string())?;
+
+    if let Ok(mut guard) = state.watcher.lock() {
+        if let Some(w) = guard.as_mut() {
+            let _ = w.unwatch(&canonical);
+        }
     }
+
+    watched.remove(&canonical);
+    Ok(())
 }
 
 #[tauri::command]
@@ -388,7 +420,10 @@ pub fn run() {
                 }
             }
         }))
-        .manage(WatcherState(Mutex::new(None)))
+        .manage(WatcherState {
+            watcher: Mutex::new(None),
+            watched_paths: Mutex::new(HashSet::new()),
+        })
         .manage(InitialFile(Mutex::new(None)))
         .manage(ExplicitQuit(Arc::new(AtomicBool::new(false))))
         .manage(IsRecording(Arc::new(AtomicBool::new(false))))
@@ -496,6 +531,11 @@ pub fn run() {
             load_comments,
             save_comments,
             hash_file,
+            history::load_history,
+            history::save_history,
+            history::add_to_history,
+            history::remove_from_history,
+            history::clear_history,
             show_recording_window,
             hide_recording_window,
             write_clipboard,
