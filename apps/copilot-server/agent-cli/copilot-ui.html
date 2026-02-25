@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>copilot-ui</title>
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
+    rel="stylesheet"
+  >
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+  *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+  }
+
+  :root {
+      --bg: #212121;
+      --bg2: #141920;
+      --border: #1e2532;
+
+      --green: #3dd68c;
+      --orange: #d19a66;
+      --red: #e06c75;
+      --blue: #61afef;
+      --cyan: #56b6c2;
+      --purple: #c678dd;
+      --yellow: #e5c07b;
+      --teal: #2bbac5;
+
+      --text: #abb2bf;
+      --text-dim: #5c6370;
+      --text-med: #7f8c8d;
+      --text-hi: #dcdfe4;
+
+      --font: 'JetBrains Mono', 'Cascadia Code', 'SF Mono', monospace;
+  }
+
+  html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font), monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow: hidden;
+  }
+
+  #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+  }
+
+  /* ── Title bar ─────────────────────────────────────────────── */
+  #titlebar {
+      background: #0a0c10;
+      border-bottom: 1px solid var(--border);
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-app-region: drag;
+  }
+
+  .tl {
+      display: flex;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+  }
+
+  .tl span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: filter .12s;
+  }
+
+  .tl span:hover {
+      filter: brightness(1.25);
+  }
+
+  .tl .r {
+      background: #ff5f57;
+  }
+
+  .tl .y {
+      background: #ffbd2e;
+  }
+
+  .tl .g {
+      background: #28c840;
+  }
+
+  #titlebar-path {
+      flex: 1;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 12px;
+      letter-spacing: .01em;
+  }
+
+  /* ── Output ────────────────────────────────────────────────── */
+  #output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0 6px;
+  }
+
+  #output::-webkit-scrollbar {
+      width: 5px;
+  }
+
+  #output::-webkit-scrollbar-thumb {
+      background: #1e2532;
+      border-radius: 3px;
+  }
+
+  #output::-webkit-scrollbar-track {
+      background: transparent;
+  }
+
+  /* ── Path bar ──────────────────────────────────────────────── */
+  #pathbar {
+      background: #0a0c10;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 18px;
+      height: 20px;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+  }
+
+  #pathbar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+  }
+
+  .pathbar-branch {
+      color: var(--text-dim);
+  }
+
+  .pathbar-branch-icon {
+      color: var(--blue);
+  }
+
+  /* ── Input bar ─────────────────────────────────────────────── */
+  #inputbar {
+      background: var(--bg);
+      border-top: 1px solid #1a2030;
+      padding: 7px 18px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+  }
+
+  #inputbar-caret {
+      color: var(--green);
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 1px;
+      flex-shrink: 0;
+      line-height: 1.55;
+      cursor: default;
+      animation: blink 1.1s step-end infinite;
+  }
+
+  @keyframes blink {
+      50% {
+          opacity: 0;
+      }
+  }
+
+  #inputbar textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-hi);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.55;
+      resize: none;
+      min-height: 20px;
+      max-height: 120px;
+      overflow-y: auto;
+  }
+
+  #inputbar textarea::placeholder {
+      color: var(--text-dim);
+      font-style: normal;
+  }
+
+  /* ── Bottom mode bar ───────────────────────────────────────── */
+  #modebar {
+      background: #0a0c10;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 18px;
+      height: 22px;
+      font-size: 11.5px;
+      flex-shrink: 0;
+  }
+
+  #modebar-left {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-dim);
+  }
+
+  .mb-mode {
+      color: var(--blue);
+      font-weight: 500;
+      cursor: pointer;
+  }
+
+  .mb-dot {
+      color: var(--text-dim);
+      margin: 0 4px;
+  }
+
+  .mb-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+  }
+
+  .mb-key kbd {
+      font-family: var(--font);
+      font-size: 10.5px;
+      background: #141920;
+      border: 1px solid #2a3240;
+      border-radius: 3px;
+      padding: 0 3px;
+      color: var(--text);
+      line-height: 1.4;
+  }
+
+  .mb-key span {
+      color: var(--text-dim);
+  }
+
+  #modebar-right {
+      color: var(--text-dim);
+      font-size: 11.5px;
+  }
+
+  .mb-model {
+      color: var(--text-dim);
+      font-size: 11px;
+      letter-spacing: 0.01em;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* MESSAGE TYPES                                               */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  .msg {
+      padding: 6px 18px;
+      font-family: 'MesloLGS NF', monospace;
+      font-size: 0.9rem;
+  }
+
+  /* Small vertical gap between unrelated messages */
+  .msg + .msg {
+      margin-top: 0;
+  }
+
+  .msg-gap {
+      height: 8px;
+  }
+
+  /* Left gutter: indicator + content */
+  .msg-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      align-items: start;
+      gap: 0;
+  }
+
+  .ind {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 5px;
+      height: 100%;
+  }
+
+  /* Dot indicators */
+  .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 1px;
+  }
+
+  .dot-green {
+      background: var(--green);
+  }
+
+  .dot-purple {
+      background: var(--purple);
+  }
+
+  .dot-cyan {
+      background: var(--cyan);
+  }
+
+  .dot-red {
+      background: var(--red);
+  }
+
+  .dot-dim {
+      background: #3a4050;
+  }
+
+  /* Chevron indicators (›) */
+  .chev {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-top: 2px;
+      line-height: 1;
+  }
+
+  /* Content area */
+  .mc {
+      flex: 1;
+      min-width: 0;
+      padding: 2px 0;
+  }
+
+  /* ── 1. AGENT TEXT (direct response, bold conclusion) ──────── */
+  /* Purple dot · bold white text */
+  .msg-agent-response .mc {
+      color: var(--text-hi);
+      font-weight: 500;
+  }
+
+  /* ── Markdown inside agent response ────────────────────────── */
+  .msg-agent-response .mc p {
+      margin: 0 0 8px;
+  }
+
+  .msg-agent-response .mc p:last-child {
+      margin-bottom: 0;
+  }
+
+  .msg-agent-response .mc strong {
+      font-weight: 700;
+  }
+
+  .msg-agent-response .mc em {
+      font-style: italic;
+  }
+
+  .msg-agent-response .mc h1, .msg-agent-response .mc h2,
+  .msg-agent-response .mc h3, .msg-agent-response .mc h4 {
+      font-size: 1em;
+      font-weight: 700;
+      margin: 10px 0 4px;
+  }
+
+  .msg-agent-response .mc ul, .msg-agent-response .mc ol {
+      margin: 4px 0 8px 20px;
+  }
+
+  .msg-agent-response .mc li + li {
+      margin-top: 2px;
+  }
+
+  .msg-agent-response .mc code {
+      color: #60fdff;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.9em;
+  }
+
+  .msg-agent-response .mc pre {
+      background: rgba(255, 255, 255, .06);
+      border-radius: 6px;
+      padding: 10px 12px;
+      overflow-x: auto;
+      margin: 6px 0 10px;
+      font-size: 0.88em;
+  }
+
+  .msg-agent-response .mc pre code {
+      background: none;
+      padding: 0;
+  }
+
+  .msg-agent-response .mc table {
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      width: 100%;
+      font-size: 0.9em;
+  }
+
+  .msg-agent-response .mc th,
+  .msg-agent-response .mc td {
+      border: 1px solid rgba(255, 255, 255, .18);
+      padding: 4px 10px;
+      text-align: left;
+  }
+
+  .msg-agent-response .mc th {
+      background: rgba(255, 255, 255, .08);
+      font-weight: 600;
+  }
+
+  .msg-agent-response .mc blockquote {
+      border-left: 3px solid var(--text-dim);
+      padding-left: 10px;
+      color: var(--text-dim);
+      margin: 4px 0 8px;
+  }
+
+  /* ── 2. AGENT THINKING (italic gray, no dot, full width) ────── */
+  /* Inline italic reasoning paragraphs, no bullet, dim */
+  .msg-thinking {
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+  }
+
+  /* inline code inside thoughts */
+  .msg-thinking code {
+      font-style: normal;
+      color: var(--text-med);
+      background: transparent;
+      font-size: 12px;
+  }
+
+  /* markdown paragraphs inside thoughts */
+  .msg-thinking .mc p {
+      margin: 0;
+  }
+
+  .msg-thinking .mc p + p {
+      margin-top: 6px;
+  }
+
+  .msg-thinking .mc ul, .msg-thinking .mc ol {
+      padding-left: 20px;
+  }
+
+  .dot-hollow {
+      color: var(--text-dim);
+      font-size: 9px;
+      line-height: 1;
+      opacity: 0.6;
+  }
+
+  /* list items inside thinking are indented */
+  .msg-thinking-list {
+      padding: 0 18px 0 52px;
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 13px;
+      line-height: 1.6;
+  }
+
+  .msg-thinking-list li {
+      list-style: decimal;
+      margin-left: 16px;
+  }
+
+  .msg-thinking-list li + li {
+      margin-top: 2px;
+  }
+
+  /* ── 3. TODO (added / queried) ─────────────────────────────── */
+  /* Green dot · "Todo added:" bold · content normal */
+  .msg-todo .mc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+  }
+
+  .todo-label {
+      color: var(--text-hi);
+      font-weight: 500;
+  }
+
+  .todo-text {
+      color: var(--text);
+  }
+
+  /* ── 4. EDIT (file edit with diff) ────────────────────────── */
+  /* Green dot · "Edit" bold · filepath dim · (+N -N) */
+  /* Error variant: › chevron · "Edit" dim · filepath dim · no diff · "No match found" */
+  .msg-edit .mc {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0;
+  }
+
+  .edit-verb {
+      color: var(--text-hi);
+      font-weight: 500;
+      margin-right: 6px;
+  }
+
+  .edit-verb-err {
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-right: 6px;
+  }
+
+  .edit-path {
+      color: var(--text-dim);
+      word-break: break-all;
+  }
+
+  .edit-diff {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: 8px;
+      font-size: 12px;
+  }
+
+  .diff-add {
+      color: var(--green);
+  }
+
+  .diff-del {
+      color: var(--red);
+  }
+
+  .edit-error {
+      display: block;
+      padding: 1px 0 1px 24px;
+      color: var(--red);
+      font-size: 12.5px;
+  }
+
+  /* ── 5. CREATE (new file) ──────────────────────────────────── */
+  /* Green dot · "Create" bold · filepath dim · (+N) green */
+  .msg-create .mc {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0;
+  }
+
+  .create-verb {
+      color: var(--text-hi);
+      font-weight: 500;
+      margin-right: 6px;
+  }
+
+  .create-path {
+      color: var(--text-dim);
+  }
+
+  .create-diff {
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--green);
+  }
+
+  /* ── 6. BASH TOOL (named shell command) ────────────────────── */
+  /* Green dot · "Tool title" bold  (first row)
+     └─  $ command...              (second row, indented, dim)
+     └─  └ N lines...              (third row, more dim)     */
+  .msg-bash .mc {
+  }
+
+  .bash-title {
+      color: var(--text-hi);
+      font-weight: 500;
+  }
+
+  .bash-cmd-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      padding-left: 0;
+      margin-top: 1px;
+  }
+
+  .bash-cmd-ind {
+      color: var(--text-dim);
+      font-size: 12px;
+      padding-top: 1px;
+  }
+
+  .bash-cmd-sign {
+      color: var(--text-dim);
+      margin-right: 4px;
+  }
+
+  .bash-cmd-text {
+      color: var(--text-dim);
+      font-size: 12.5px;
+      word-break: break-all;
+  }
+
+  .bash-out-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      padding-left: 0;
+  }
+
+  .bash-out-ind {
+      color: var(--text-dim);
+      font-size: 12px;
+      padding-top: 1px;
+  }
+
+  .bash-out-text {
+      color: var(--text-dim);
+      font-size: 12px;
+      font-style: italic;
+  }
+
+  .bash-out-row.expandable .bash-out-body {
+      cursor: pointer;
+      user-select: none;
+  }
+
+  .bash-out-row.expandable .bash-out-body:hover .bash-out-text {
+      color: var(--text-med);
+  }
+
+  .bash-out-toggle {
+      color: var(--text-dim);
+      font-size: 10px;
+      margin-right: 4px;
+      transition: color .1s;
+  }
+
+  .bash-out-detail {
+      grid-column: 2;
+      margin-top: 3px;
+      padding: 6px 8px;
+      background: #2b2c2f;
+      color: #a8a8a8;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+      border-radius: 6px;
+  }
+
+  .bash-out-row.expanded .bash-out-detail {
+      display: block;
+  }
+
+  /* ── 7. PLAN READY FOR REVIEW ──────────────────────────────── */
+  /* › chevron · "Plan ready for review:" bold · preview dim truncated
+     indented:   "Operation aborted by user"                        */
+  .msg-plan-ready .mc {
+  }
+
+  .plan-ready-label {
+      color: var(--text-hi);
+      font-weight: 500;
+  }
+
+  .plan-ready-preview {
+      color: var(--text-dim);
+  }
+
+  .plan-aborted {
+      padding-left: 18px;
+      color: var(--text-dim);
+      font-size: 13px;
+  }
+
+  /* ── 8. OPERATION CANCELLED ────────────────────────────────── */
+  /* Cyan dot · "Operation cancelled by user" dim */
+  .msg-cancelled .mc {
+      color: var(--text-dim);
+  }
+
+  /* ── 9. USER MESSAGE (the prompt sent) ─────────────────────── */
+  /* › chevron · full text, wraps, dim gray */
+  .msg-user .mc {
+      color: var(--text-dim);
+      white-space: pre-wrap;
+      word-break: break-word;
+  }
+
+  /* ── 10. SECTION HEADING (the big bold colored label) ────────── */
+  /* Green dot · "Custo dos perfis adicionais:" bold-colored · rest normal */
+  /* This appears to be an agent response with inline code spans */
+  .msg-section .mc {
+      color: var(--text);
+      line-height: 1.6;
+      word-break: break-word;
+  }
+
+  .msg-section strong {
+      color: var(--text-hi);
+      font-weight: 500;
+  }
+
+  .msg-section .code-span {
+      color: var(--cyan);
+  }
+
+  /* ── STREAMING CURSOR ─────────────────────────────────────── */
+  .stream-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 13px;
+      background: var(--green);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+  }
+
+  /* ── SPINNER (active tool) ─────────────────────────────────── */
+  @keyframes spin {
+      to {
+          transform: rotate(360deg);
+      }
+  }
+
+  .spinner {
+      width: 8px;
+      height: 8px;
+      border: 1.5px solid var(--text-dim);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-top: 1px;
+  }
+
+  /* ── CONFIRM DIALOG ────────────────────────────────────────── */
+  .msg-confirm {
+      margin: 4px 18px 4px 36px;
+      background: #10161f;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+  }
+
+  .confirm-q {
+      color: var(--yellow);
+      font-size: 12.5px;
+      margin-bottom: 6px;
+  }
+
+  .confirm-body {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+  }
+
+  .confirm-btns {
+      display: flex;
+      gap: 6px;
+  }
+
+  .btn {
+      font-family: var(--font);
+      font-size: 12px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+      padding: 2px 10px;
+      cursor: pointer;
+      transition: border-color .12s, color .12s;
+  }
+
+  .btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+  }
+
+  .btn-yes {
+      border-color: #1e4032;
+      color: var(--green);
+  }
+
+  .btn-yes:hover {
+      background: #0d1f17;
+  }
+
+  /* ── WELCOME / ERROR states ────────────────────────────────── */
+  .msg-welcome {
+      padding: 18px 18px 12px;
+      color: var(--text-dim);
+      font-size: 12px;
+  }
+
+  .msg-error-inline {
+      padding: 2px 0 2px 36px;
+      color: var(--red);
+      font-size: 12.5px;
+  }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Output -->
+    <div id="output"></div>
+
+    <!-- Input bar -->
+    <div id="inputbar">
+      <div id="inputbar-caret">›</div>
+      <textarea
+        id="input"
+        rows="1"
+        placeholder="Describe a plan. Type @ to mention files, / for commands, or ? for shortcuts"
+        autofocus
+      ></textarea>
+    </div>
+
+    <!-- Mode bar -->
+    <div id="modebar">
+      <div id="modebar-left">
+        <span
+          class="mb-mode"
+          id="mode-label"
+        >plan</span>
+        <span class="mb-dot">·</span>
+        <span class="mb-mode">execute</span>
+      </div>
+      <div id="modebar-right">
+        <span
+          class="mb-model"
+          id="model-label"
+        >claude-sonnet-4.6</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  // ════════════════════════════════════════════════════════════════
+  // RENDERER — maps ACP message types → DOM exactly like the CLI
+  // ════════════════════════════════════════════════════════════════
+
+  const output = document.getElementById('output')
+  const inputEl = document.getElementById('input')
+
+  // ── Helpers ────────────────────────────────────────────────────
+
+  function el (tag, cls, ...children) {
+    const e = document.createElement(tag)
+    if (cls) e.className = cls
+    for (const c of children) {
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c))
+      else if (c) e.appendChild(c)
+    }
+    return e
+  }
+
+  function dotHollow () {
+    return el('div', 'ind', el('span', 'dot-hollow', '○'))
+  }
+
+  function dot (cls) {
+    return el('div', 'ind', el('span', 'dot ' + cls))
+  }
+
+  function chev () {
+    return el('div', 'ind', el('span', 'chev', '›'))
+  }
+
+  function chevD () {
+    // Double chevron used for user message / plan content
+    return el('div', 'ind', el('span', 'chev', '◆'))
+  }
+
+  function spinner () {
+    return el('div', 'ind', el('span', 'spinner'))
+  }
+
+  function appendMsg (node) {
+    output.appendChild(node)
+    output.scrollTop = output.scrollHeight
+  }
+
+  function gap (size = 8) {
+    const d = document.createElement('div')
+    d.style.height = size + 'px'
+    appendMsg(d)
+  }
+
+  // ── Row builder (indicator + content) ──────────────────────────
+  function makeRow (indEl, contentEl, extraCls = '') {
+    const wrap = el('div', 'msg ' + extraCls)
+    const row = el('div', 'msg-row')
+    row.appendChild(indEl)
+    row.appendChild(contentEl)
+    wrap.appendChild(row)
+    return wrap
+  }
+
+  // ── RENDER FUNCTIONS ────────────────────────────────────────────
+
+  /**
+   * msg_agent_response
+   * Purple dot · bold text (direct agent statement/conclusion)
+   * e.g. "Agora tenho tudo que preciso. Vou criar o plano."
+   */
+  function renderAgentResponse (text) {
+    const mc = el('div', 'mc')
+    mc.textContent = text
+    const row = makeRow(dot('dot-purple'), mc, 'msg-agent-response')
+    appendMsg(row)
+  }
+
+  /**
+   * msg_thinking
+   * No indicator, indented italic dim text — streaming agent reasoning
+   * May contain numbered list items rendered as-is
+   */
+  function renderThinking (text) {
+    const mc = el('div', 'mc')
+    if (window.marked) {
+      mc.innerHTML = marked.parse(text)
+    } else {
+      mc.textContent = text
+    }
+    appendMsg(makeRow(dotHollow(), mc, 'msg-thinking'))
+  }
+
+  /**
+   * msg_todo
+   * Green dot · "Todo added:" / "Todo queried:" bold · content normal
+   */
+  function renderTodo (action, text) {
+    const mc = el('div', 'mc')
+    const label = el('span', 'todo-label', action + ':')
+    const body = el('span', 'todo-text', ' ' + text)
+    mc.appendChild(label)
+    mc.appendChild(body)
+    appendMsg(makeRow(dot('dot-green'), mc, 'msg-todo'))
+  }
+
+  /**
+   * msg_edit
+   * Success: Green dot · "Edit" bold · path dim · (+N -N)
+   * Failure: › chevron · "Edit" dim · path dim
+   *          indented red "No match found"
+   */
+  function renderEdit (path, added, deleted, error) {
+    const mc = el('div', 'mc')
+    const hasError = !!error
+    const verbEl = el('span', hasError ? 'edit-verb-err' : 'edit-verb', 'Edit')
+    mc.appendChild(verbEl)
+    mc.appendChild(el('span', 'edit-path', ' ' + path))
+
+    if (!hasError && (added != null || deleted != null)) {
+      const diffEl = el('span', 'edit-diff')
+      if (added != null && added > 0) diffEl.appendChild(el('span', 'diff-add', '(+' + added))
+      if (deleted != null && deleted > 0) diffEl.appendChild(el('span', 'diff-del', ' -' + deleted + ')'))
+      else if (added != null && added > 0) diffEl.children[0].textContent += ')'
+      mc.appendChild(diffEl)
+    }
+
+    const row = makeRow(
+      hasError ? chev() : dot('dot-green'),
+      mc, 'msg-edit'
+    )
+
+    if (hasError) {
+      const errEl = el('div', 'edit-error', error)
+      row.appendChild(errEl)
+    }
+
+    appendMsg(row)
+  }
+
+  /**
+   * msg_create
+   * Green dot · "Create" bold · path dim · (+N) green
+   */
+  function renderCreate (path, added) {
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'create-verb', 'Create'))
+    mc.appendChild(el('span', 'create-path', ' ' + path))
+    if (added != null) {
+      mc.appendChild(el('span', 'create-diff', ' (+' + added + ')'))
+    }
+    appendMsg(makeRow(dot('dot-green'), mc, 'msg-create'))
+  }
+
+  /**
+   * renderRead — "Read filename lines start–end" (green dot)
+   * A "└ N lines read" summary é adicionada via appendBashOutput no tool_output_done
+   */
+  function renderRead (label) {
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'edit-verb', 'Read'))
+    mc.appendChild(el('span', 'edit-path', ' ' + label))
+    appendMsg(makeRow(dot('dot-green'), mc, 'msg-bash'))
+    return mc
+  }
+
+  /**
+   * renderEditLive — "Edit filename" (green dot) que se atualiza com (+N -M) depois
+   */
+  function renderEditLive (filename) {
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'edit-verb', 'Edit'))
+    mc.appendChild(el('span', 'edit-path', ' ' + filename))
+    const diffSpan = el('span', 'edit-diff')
+    mc.appendChild(diffSpan)
+    mc._isEditLive = true
+    mc._diffSpan = diffSpan
+    const row = makeRow(dot('dot-green'), mc, 'msg-edit')
+    mc._row = row
+    appendMsg(row)
+    return mc
+  }
+
+  /**
+   * renderCreateLive — "Create filename" (green dot) que se atualiza com (+N) depois
+   */
+  function renderCreateLive (filename) {
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'create-verb', 'Create'))
+    mc.appendChild(el('span', 'create-path', ' ' + filename))
+    const diffSpan = el('span', 'create-diff')
+    mc.appendChild(diffSpan)
+    mc._isCreateLive = true
+    mc._diffSpan = diffSpan
+    appendMsg(makeRow(dot('dot-green'), mc, 'msg-create'))
+    return mc
+  }
+
+  /**
+   * msg_bash
+   * Green dot · "Title" bold
+   *   $ command text...
+   *   └ N lines...
+   *
+   * @param {string}   title   — human-readable label
+   * @param {string[]} cmds    — shell commands that ran
+   * @param {string}   result  — short output summary ("2 lines...", "1 line...")
+   * @param {boolean}  loading — show spinner instead of dot
+   */
+  function renderBash (title, cmds = [], result = null, loading = false) {
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'bash-title', title))
+
+    cmds.forEach(cmd => {
+      const cmdRow = el('div', 'bash-cmd-row')
+      const ind = el('div', 'bash-cmd-ind', ' ')   // blank to align
+      const body = el('div')
+      body.appendChild(el('span', 'bash-cmd-sign', ' $ '))
+      body.appendChild(el('span', 'bash-cmd-text', cmd))
+      cmdRow.appendChild(ind)
+      cmdRow.appendChild(body)
+      mc.appendChild(cmdRow)
+    })
+
+    if (result) {
+      appendBashOutput(mc, result)
+    }
+
+    appendMsg(makeRow(loading ? spinner() : dot('dot-green'), mc, 'msg-bash'))
+    return mc
+  }
+
+  function appendBashOutput (mc, text, detail = null) {
+    const outRow = el('div', 'bash-out-row')
+    const ind = el('div', 'bash-out-ind', ' ')
+    const body = el('div', 'bash-out-body')
+    if (detail) {
+      outRow.classList.add('expandable')
+      const toggle = el('span', 'bash-out-toggle', '▶')
+      body.appendChild(toggle)
+      body.appendChild(el('span', null, ' └ '))
+      body.appendChild(el('span', 'bash-out-text', text))
+      const detailEl = el('pre', 'bash-out-detail', detail)
+      body.appendChild(detailEl)
+      body.addEventListener('click', () => {
+        const expanded = outRow.classList.toggle('expanded')
+        toggle.textContent = expanded ? '▼' : '▶'
+      })
+    } else {
+      body.appendChild(el('span', null, ' └ '))
+      body.appendChild(el('span', 'bash-out-text', text))
+    }
+    outRow.appendChild(ind)
+    outRow.appendChild(body)
+    mc.appendChild(outRow)
+    output.scrollTop = output.scrollHeight
+  }
+
+  /**
+   * msg_plan_ready
+   * › · "Plan ready for review:" bold · preview dim (truncated to ~40 chars)
+   *     "Operation aborted by user" dim indented
+   */
+  function renderPlanReady (preview, aborted = false) {
+    const truncated = preview.length > 50 ? preview.slice(0, 50) + '...' : preview
+    const mc = el('div', 'mc')
+    mc.appendChild(el('span', 'plan-ready-label', 'Plan ready for review:'))
+    mc.appendChild(el('span', 'plan-ready-preview', ' ' + truncated))
+    const row = makeRow(chev(), mc, 'msg-plan-ready')
+    if (aborted) {
+      row.appendChild(el('div', 'plan-aborted', 'Operation aborted by user'))
+    }
+    appendMsg(row)
+  }
+
+  /**
+   * msg_cancelled
+   * Cyan dot · "Operation cancelled by user"
+   */
+  function renderCancelled () {
+    const mc = el('div', 'mc')
+    mc.textContent = 'Operation cancelled by user'
+    appendMsg(makeRow(dot('dot-cyan'), mc, 'msg-cancelled'))
+  }
+
+  // Map toolCallId → DOM row element for appending output summaries
+  const _toolRows = new Map()
+
+  /**
+   * msg_user
+   * › · user prompt text, dim, wraps
+   */
+  function renderUser (text) {
+    const mc = el('div', 'mc')
+    mc.textContent = text
+    appendMsg(makeRow(chev(), mc, 'msg-user'))
+    gap(4)
+  }
+
+  /**
+   * msg_section / rich inline text
+   * Green dot · text with inline <strong> and <code> spans
+   * Used for agent responses with highlighted labels + inline code
+   */
+  function renderSection (html) {
+    const mc = el('div', 'mc')
+    mc.innerHTML = html   // controlled HTML only, no user content
+    appendMsg(makeRow(dot('dot-green'), mc, 'msg-section'))
+  }
+
+  // ── STREAMING helper ────────────────────────────────────────────
+  // Returns a { el, append(text), done() } for streaming text
+  function makeStreamRow (indEl, cls, parseMarkdown = true) {
+    const mc = el('div', 'mc')
+    const cur = el('span', 'stream-cursor')
+    mc.appendChild(cur)
+    const row = makeRow(indEl, mc, cls)
+    appendMsg(row)
+    let buffer = ''
+    return {
+      el: mc,
+      append (text) {
+        buffer += text
+        mc.insertBefore(document.createTextNode(text), cur)
+        output.scrollTop = output.scrollHeight
+      },
+      done () {
+        cur.remove()
+        if (parseMarkdown && window.marked && buffer.trim()) {
+          mc.innerHTML = marked.parse(buffer)
+        }
+        output.scrollTop = output.scrollHeight
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WEBSOCKET — connects to server.js (ACP bridge)
+  // Falls back to demo mode if no server
+  // ════════════════════════════════════════════════════════════════
+
+  const WS_URL = `ws://${location.host}`
+  let ws = null
+  let sessionReady = false
+  const messageQueue = []
+
+  function flushQueue () {
+    while (messageQueue.length > 0) {
+      const text = messageQueue.shift()
+      ws.send(JSON.stringify({ type: 'prompt', text }))
+    }
+  }
+
+  function connect () {
+    ws = new WebSocket(WS_URL)
+
+    ws.onopen = () => {
+      console.log('[ws] connected')
+    }
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data)
+      handleServerMessage(msg)
+    }
+
+    ws.onerror = () => {
+      console.warn('[ws] Could not connect — running in demo mode')
+      runDemo()
+    }
+
+    ws.onclose = () => {
+      if (sessionReady) {
+        renderCancelled()
+      }
+    }
+  }
+
+  function handleServerMessage (msg) {
+    switch (msg.type) {
+
+      case 'status':
+        renderThinking(msg.message)
+        break
+
+      case 'session_loaded':
+        renderThinking(`Session ${msg.sessionId} loaded`)
+        break
+
+      case 'ready':
+        sessionReady = true
+        document.getElementById('model-label').textContent =
+          (msg.model || 'claude-sonnet-4.6') + ' (medium) (1x)'
+        document.getElementById('mode-label').textContent = msg.currentMode || 'code'
+        flushQueue()
+        break
+
+      case 'thought_delta':
+        // Streaming thought/reasoning — hollow circle ○, italic dim, markdown for inline code
+        if (!window._thoughtRow) {
+          window._thoughtRow = makeStreamRow(dotHollow(), 'msg-thinking', true)
+          gap(2)
+        }
+        window._thoughtRow.append(msg.delta)
+        break
+
+      case 'user_delta':
+        // Streaming user message (from session history replay)
+        if (!window._userRow) {
+          window._userRow = makeStreamRow(chev(), 'msg-user', false)
+          gap(4)
+        }
+        window._userRow.append(msg.delta)
+        clearTimeout(window._userIdleTimer)
+        window._userIdleTimer = setTimeout(() => {
+          if (window._userRow) {
+            window._userRow.done()
+            window._userRow = null
+          }
+        }, 300)
+        break
+
+      case 'turn_delta':
+        // Finalize thought row if switching to real response
+        if (window._thoughtRow) {
+          window._thoughtRow.done()
+          window._thoughtRow = null
+          gap(2)
+        }
+        // Append to a running streaming row (create on first delta)
+        if (!window._streamRow) {
+          window._streamRow = makeStreamRow(dot('dot-purple'), 'msg-agent-response')
+          gap(2)
+        }
+        window._streamRow.append(msg.delta)
+        // Reset inactivity timer — finalize markdown after 800ms of silence
+        clearTimeout(window._turnIdleTimer)
+        window._turnIdleTimer = setTimeout(() => {
+          if (window._streamRow) {
+            window._streamRow.done()
+            window._streamRow = null
+            gap(4)
+          }
+        }, 800)
+        break
+
+      case 'turn_complete':
+        clearTimeout(window._turnIdleTimer)
+        if (window._thoughtRow) {
+          window._thoughtRow.done()
+          window._thoughtRow = null
+        }
+        if (window._streamRow) {
+          window._streamRow.done()
+          window._streamRow = null
+          gap(4)
+        }
+        break
+
+      case 'status_notice':
+        renderThinking(msg.text)
+        break
+
+      case 'tool_output': {
+        // Finaliza mensagem do agente que estava em streaming antes deste tool
+        clearTimeout(window._turnIdleTimer)
+        if (window._streamRow) {
+          window._streamRow.done()
+          window._streamRow = null
+          gap(2)
+        }
+
+        const kind = msg.kind || ''
+        const rawInput = msg.rawInput || {}
+        const locations = msg.locations || []
+        let mc = null
+
+        // Helper: basename de um path
+        const basename = p => p ? p.split('/').pop() : ''
+
+        if (kind === 'read' || kind === 'view_file') {
+          // Grep/search: tem rawInput.pattern
+          if (rawInput.pattern != null) {
+            const pat = String(rawInput.pattern).length > 40
+              ? String(rawInput.pattern).slice(0, 40) + '…'
+              : String(rawInput.pattern)
+            mc = renderRead(`"${pat}"`)
+          } else {
+            // "Read filename lines start-end"
+            const file = basename(rawInput.file_path || rawInput.path || (locations[0] && locations[0].path) || '')
+            // rawInput pode ter start_line/end_line OU view_range:[start,end]
+            const vr = rawInput.view_range
+            const start = rawInput.start_line ?? (vr && vr[0]) ?? null
+            const end = rawInput.end_line ?? (vr && vr[1]) ?? null
+            const range = (start != null && end != null) ? ` lines ${start}-${end}` : ''
+            mc = renderRead(file + range)
+          }
+
+        } else if (kind === 'edit' || kind === 'create_or_edit' || kind === 'str_replace_based_edit_tool') {
+          // "Edit filename" — stats (+N -M) chegam depois no tool_output_done
+          const file = basename((locations[0] && locations[0].path) || rawInput.path || '')
+          mc = renderEditLive(file)
+
+        } else if (kind === 'create_file' || kind === 'create') {
+          const file = basename((locations[0] && locations[0].path) || rawInput.path || rawInput.file_path || '')
+          mc = renderCreateLive(file)
+
+        } else if (kind === 'execute') {
+          const cmds = rawInput.commands || (rawInput.command ? [rawInput.command] : [])
+          const label = cmds[0] || msg.title || 'Run'
+          mc = renderBash(label, cmds.slice(1))
+
+        } else if (kind === 'search' || kind === 'grep' || kind === 'find') {
+          mc = renderRead(msg.title || 'Search')
+
+        } else {
+          // fallback genérico
+          mc = renderBash(msg.title || kind || 'Tool', [])
+        }
+
+        if (msg.toolCallId && mc) _toolRows.set(msg.toolCallId, mc)
+        break
+      }
+
+      case 'tool_output_done': {
+        const mc = _toolRows.get(msg.toolCallId)
+        if (!mc) break
+
+        // Edit/create: atualizar stats no título em vez de linha └
+        if (mc._isEditLive || mc._isCreateLive) {
+          if (msg.addedLines != null || msg.deletedLines != null) {
+            const diffEl = mc._diffSpan
+            if (diffEl) {
+              diffEl.innerHTML = ''
+              if (msg.addedLines > 0) diffEl.appendChild(el('span', 'diff-add', '(+' + msg.addedLines))
+              if (msg.deletedLines > 0) diffEl.appendChild(el('span', 'diff-del', (msg.addedLines > 0 ? ' -' : '(-') + msg.deletedLines + ')'))
+              else if (msg.addedLines > 0) diffEl.children[0].textContent += ')'
+            }
+          }
+          // Expande se tiver detail (diff completo)
+          if (msg.detail && mc._detailPre) {
+            mc._detailPre.textContent = msg.detail
+            mc._row && mc._row.classList.add('has-detail')
+          }
+        } else if (msg.summary) {
+          // Bash/Read/Search: mostrar "└ N lines..."
+          const lines = msg.summary.split('\n').filter(Boolean)
+          const preview = lines.length > 1 ? `${lines.length} lines...` : lines[0] || ''
+          appendBashOutput(mc, preview, msg.detail || null)
+        }
+
+        _toolRows.delete(msg.toolCallId)
+        break
+      }
+
+      case 'todo_update':
+        renderTodo(msg.todo.status === 'queried' ? 'Todo queried' : 'Todo added', msg.todo.content)
+        break
+
+      case 'plan_update':
+        renderPlanReady(msg.plan, false)
+        break
+
+      case 'prompt_request': {
+        // Confirmation dialog
+        const dlg = el('div', 'msg-confirm')
+        dlg.appendChild(el('div', 'confirm-q', '⚠ Confirmation required'))
+        dlg.appendChild(el('div', 'confirm-body', msg.request.message || ''))
+        const btns = el('div', 'confirm-btns')
+        const yes = el('button', 'btn btn-yes', 'Yes')
+        const no = el('button', 'btn btn-no', 'No')
+        yes.onclick = () => {
+          ws.send(JSON.stringify({ type: 'prompt_response', requestId: msg.request.id, response: 'yes' }))
+          dlg.remove()
+        }
+        no.onclick = () => {
+          ws.send(JSON.stringify({ type: 'prompt_response', requestId: msg.request.id, response: 'no' }))
+          dlg.remove()
+        }
+        btns.appendChild(yes)
+        btns.appendChild(no)
+        dlg.appendChild(btns)
+        appendMsg(dlg)
+        break
+      }
+
+      case 'cancelled':
+      case 'agent_exit':
+      case 'connection_closed':
+        renderCancelled()
+        sessionReady = false
+        break
+
+      case 'error':
+        appendMsg(el('div', 'msg-error-inline', '⚠ ' + msg.message))
+        break
+
+      case 'mode_update':
+        document.getElementById('mode-label').textContent = msg.mode
+        break
+
+      case 'session_info':
+        console.log('[session_info]', msg.data)
+        // Render info lines similar to Copilot terminal output
+        if (msg.data?.notices) {
+          msg.data.notices.forEach(n => renderThinking(n.message || n))
+        }
+        if (msg.data?.capabilities) {
+          const c = msg.data.capabilities
+          const parts = []
+          if (c.customInstructions != null) parts.push(`${c.customInstructions} custom instruction${c.customInstructions !== 1 ? 's' : ''}`)
+          if (c.mcpServers != null) parts.push(`${c.mcpServers} MCP server${c.mcpServers !== 1 ? 's' : ''}`)
+          if (c.plugins != null) parts.push(`${c.plugins} plugin${c.plugins !== 1 ? 's' : ''}`)
+          if (c.skills != null) parts.push(`${c.skills} skill${c.skills !== 1 ? 's' : ''}`)
+          if (c.agents != null) parts.push(`${c.agents} agent${c.agents !== 1 ? 's' : ''}`)
+          if (parts.length) renderThinking('Environment loaded: ' + parts.join(', '))
+        }
+        break
+    }
+  }
+
+  // ── Input ─────────────────────────────────────────────────────
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const text = inputEl.value.trim()
+      if (!text) return
+      inputEl.value = ''
+      inputEl.style.height = 'auto'
+
+      renderUser(text)
+
+      if (ws && ws.readyState === WebSocket.OPEN && sessionReady) {
+        ws.send(JSON.stringify({ type: 'prompt', text }))
+      } else {
+        messageQueue.push(text)
+      }
+    }
+  })
+
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto'
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'
+  })
+
+  // ════════════════════════════════════════════════════════════════
+  // DEMO MODE — replays the exact screenshots as a walkthrough
+  // ════════════════════════════════════════════════════════════════
+
+  async function sleep (ms) { return new Promise(r => setTimeout(r, ms)) }
+
+  async function runDemo () {
+    /*
+    document.getElementById('model-label').textContent = 'claude-sonnet-4.6 (medium) (1x)'
+
+    await sleep(200)
+
+    // ── Italic reasoning block (top of screen 2) ──────────────────
+    renderThinking('The user is reviewing the plan and providing feedback on the open questions:')
+    await sleep(80)
+    renderThinking([
+      '1. ECR authentication: Users need to do `aws ecr get-login-password` — this is part of PicPay developers\' routine',
+      '2. Additional profiles (node, java, go): Ask about implementation cost — if quick, do it now',
+      '3. Versioning: Follow the same pattern as moonlight-base-images (which uses explicit version numbers in directories, e.g., `2.330.0`, `1.0.0`)'
+    ].join('\n'))
+    await sleep(80)
+    renderThinking('Let me assess the cost of implementing the additional profiles (node, java, go) quickly. These would just be additional Dockerfiles that extend the base image and install specific runtimes via asdf. It\'s relatively straightforward since the runtimes-uno already has all the installation patterns.')
+
+    gap(4)
+    await sleep(100)
+
+    // Todo queried
+    renderTodo('Todo queried', '')
+    await sleep(50)
+
+    // Sub-thinking (dash list)
+    renderThinking('Let me think about the cost of implementing the additional profiles (node, java, go):')
+    await sleep(50)
+    renderThinking('- Each profile is just a Dockerfile that:\n  1. FROM copilot-sandbox:latest\n  2. Installs one runtime via asdf (or PPA for PHP/Python)\n  3. Creates .moonlight.yaml and catalog-info.yaml')
+
+    gap(8)
+    await sleep(200)
+
+    // ── Agent bold response ────────────────────────────────────────
+    renderAgentResponse('Agora tenho tudo que preciso. Vou criar o plano.')
+    await sleep(150)
+
+    // Todo added
+    renderTodo('Todo added', 'Criar Dockerfile base no moonlight-base-images')
+    await sleep(100)
+
+    // Create
+    renderCreate('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 135)
+    await sleep(100)
+
+    // Bash — Notificando Arandu
+    renderBash(
+      'Notificando Arandu',
+      ['/Users/william.correa/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md" 2>/dev/null || true'],
+      '1 line...'
+    )
+    await sleep(100)
+
+    // Plan ready (aborted)
+    renderPlanReady('## Estratégia: Imagens Incrementais + Pull do E', true)
+    await sleep(80)
+    renderCancelled()
+
+    gap(12)
+    await sleep(300)
+
+    // ── User message (the big review block) ───────────────────────
+    renderUser('# Plan Review ## Comment 1 About the block(s): > Autenticação ECR: O usuário precisa de aws ecr get-login-password para fazer pull? Ou a imagem será pública/acessível via GHCR? → Definir o registry final. Message: Será necessário fazer login no ECR, mas faz parte da rotina das pessoas desenvolvedoras do PicPay ## Comment 2 About the block(s): > Perfis adicionais (node, java, go): Implementar na fase inicial ou deixar como roadmap? Message: QUal o custo de implementação disso? Se for rápido podemos fazer logo ## Comment 3 About the block(s): > Versioning da imagem: Tag latest + 1.0.0? Ou apenas versionado? Message: O mesmo padrão que já tem no moonlight')
+
+    await sleep(200)
+
+    // ── Screen 1 re-render ──────────────────────────────────────────
+    // Big inline-code section response
+    renderSection(
+      '<strong>Custo dos perfis adicionais:</strong> baixo — cada perfil é um Dockerfile de ~20 linhas (<span class="code-span">FROM copilot-sandbox:latest</span> + instalar 1 runtime via asdf), mais <span class="code-span">.moonlight.yaml</span> e <span class="code-span">catalog-info.yaml</span>. São 3 perfis × 3 arquivos = 9 arquivos praticamente idênticos entre si. Incluir no escopo.'
+    )
+    await sleep(120)
+
+    // Todo added
+    renderTodo('Todo added', 'Criar Dockerfile perfil :node no moonlight-base-images')
+    await sleep(100)
+
+    // Edit × 5
+    renderEdit('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 4, 4)
+    await sleep(60)
+    renderEdit('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 13, 1)
+    await sleep(60)
+    renderEdit('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 0, 0, 'No match found')
+    await sleep(60)
+    renderEdit('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 1, 1)
+    await sleep(80)
+
+    // Bash — Verificar linhas
+    renderBash(
+      'Verificar linhas do arquivo',
+      ['grep -n "roadmap\\|copilot-sandbox:node" /Users/william.correa/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md'],
+      '2 lines...'
+    )
+    await sleep(80)
+
+    renderEdit('~/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md', 3, 3)
+    await sleep(80)
+
+    // Bash — Notificando Arandu
+    renderBash(
+      'Notificando Arandu',
+      ['notify-arandu "/Users/william.correa/.copilot/session-state/26d6e898-cf82-4e27-8287-c59f7ed1ed83/plan.md" 2>/dev/null || true'],
+      '1 line...'
+    )
+    await sleep(80)
+
+    // Plan ready (aborted)
+    renderPlanReady('## Plano Atualizado: Imagens Incrementais + Pul', true)
+    await sleep(80)
+
+    renderCancelled()*/
+  }
+
+  function demoReply (text) {
+    renderAgentResponse('Entendido. Processando sua solicitação...')
+    setTimeout(() => {
+      renderThinking('Let me analyze what you need and create the appropriate plan.')
+      setTimeout(() => {
+        renderTodo('Todo added', text.slice(0, 60))
+        setTimeout(() => {
+          renderBash('Executando tarefa', ['echo "processing..."'], '1 line...')
+          setTimeout(() => renderPlanReady('## ' + text.slice(0, 40), false), 400)
+        }, 300)
+      }, 200)
+    }, 200)
+  }
+
+  // ── Boot ───────────────────────────────────────────────────────
+  try {
+    connect()
+  } catch (e) {
+    runDemo()
+  }
+  </script>
+</body>
+</html>
