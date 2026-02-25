@@ -157,6 +157,11 @@ fn get_initial_file(state: tauri::State<InitialFile>) -> Option<String> {
 }
 
 #[tauri::command]
+fn get_home_dir() -> Option<String> {
+    std::env::var("HOME").ok().or_else(|| std::env::var("USERPROFILE").ok())
+}
+
+#[tauri::command]
 fn check_cli_status(app: tauri::AppHandle) -> CliStatus {
     #[cfg(target_os = "macos")]
     {
@@ -490,6 +495,7 @@ pub fn run() {
             watch_file,
             unwatch_file,
             get_initial_file,
+            get_home_dir,
             check_cli_status,
             install_cli,
             dismiss_cli_prompt,
