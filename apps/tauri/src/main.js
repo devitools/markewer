@@ -1092,6 +1092,31 @@ listen("file-changed", async (event) => {
   }
 });
 
+// Whisper file-watcher events — auto-refresh UI when models or settings
+// change on disk (e.g. external download, another instance, manual edit).
+
+listen("whisper:models-changed", async () => {
+  const modal = document.getElementById("whisper-settings-modal");
+  if (modal && modal.style.display === "flex") {
+    await loadModelList();
+  }
+});
+
+listen("whisper:settings-changed", async () => {
+  const modal = document.getElementById("whisper-settings-modal");
+  if (modal && modal.style.display === "flex") {
+    try {
+      const settings = await invoke("get_whisper_settings");
+      const shortcutInput = document.getElementById("shortcut-input");
+      const thresholdInput = document.getElementById("threshold-input");
+      if (shortcutInput) shortcutInput.value = settings.shortcut || "Alt+Space";
+      if (thresholdInput) thresholdInput.value = settings.long_recording_threshold || 60;
+    } catch (e) {
+      console.warn("Failed to refresh whisper settings:", e);
+    }
+  }
+});
+
 // Voice-to-text recording state
 
 const recordingBtn = document.getElementById("recording-btn");
