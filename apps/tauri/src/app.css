@@ -754,7 +754,7 @@ html.dark link[media*="light"] { media: not all; }
   position: relative;
   cursor: pointer;
   transition: background 0.15s;
-  padding: 4px 8px;
+  padding: 2px 8px;
   margin-left: -8px;
   border-radius: 4px;
 }
@@ -765,19 +765,14 @@ html.dark link[media*="light"] { media: not all; }
 
 .commentable-block.selected {
   background: color-mix(in srgb, var(--link) 15%, transparent);
-  outline: 2px solid var(--link);
-  outline-offset: -2px;
 }
 
-.commentable-block.selected::before {
-  content: "✓";
-  position: absolute;
-  left: -20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--link);
-  font-weight: bold;
-  font-size: 14px;
+/* Fix hover coverage for list items - render bullets inside */
+li.commentable-block {
+  margin-right: -8px;
+  padding-right: 8px;
+  list-style-position: inside;
+  padding-left: 0;
 }
 
 /* Comment Badges */
@@ -785,7 +780,8 @@ html.dark link[media*="light"] { media: not all; }
 .comment-badge {
   position: absolute;
   right: -30px;
-  top: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
